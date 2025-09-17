@@ -76,11 +76,6 @@ The structure is optimized for extensibility:
 
 ## 🎨 Customization
 
-### Themes
-- **Serene Focus**: Calm, minimalist design
-- **Natural Balance**: Earth-toned, organic feel
-- **Modern Minimalist**: Clean, contemporary look
-
 ### Cursor Follower Settings
 - Dot size: 3px (configurable in CSS)
 - Circle size: 24px (configurable in CSS)
