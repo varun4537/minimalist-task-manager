@@ -1,0 +1,807 @@
+/* --- THEME DEFINITIONS --- */
+/* Natural Balance Theme (Light) - Warm, Earthy Tones */
+.theme-natural-light {
+    --bg-color: #FDFCF7; --card-surface: #F5F3ED; --text-primary: #4a4a4a; --text-secondary: #8D8D8D;
+    --accent-color: #5F8575; --border-color: #EAE6E1;
+    --age-1-bg: #F5E8C7; --age-1-text: #4a4a4a; --age-2-bg: #E4C580; --age-2-text: #4a4a4a;
+    --age-3-bg: #D48C70; --age-3-text: #FFFFFF;
+    --shadow-color: rgba(0, 0, 0, 0.07);
+}
+
+/* Optimized Dark Theme - Claymorphic Friendly */
+body.dark-mode {
+    --bg-color: #1A1A1A; --card-surface: #2A2A2A; --text-primary: #F5F5F5; --text-secondary: #B8B8B8;
+    --accent-color: #7C3AED; --border-color: #404040;
+    --age-1-bg: #4A3C1D; --age-1-text: #F5E6A3; --age-2-bg: #5D3A1A; --age-2-text: #F5D0A3;
+    --age-3-bg: #4A1D1D; --age-3-text: #F5A3A3;
+    --shadow-color: rgba(0, 0, 0, 0.15);
+}
+
+/* --- Base Layout --- */
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: start;
+    justify-content: center;
+}
+
+.task-manager-view {
+    display: contents; /* Allows children to be direct grid items */
+}
+
+.main-content {
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    gap: 2rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.main-content .task-card {
+    flex: 1;
+    max-width: 380px;
+}
+
+/* --- Right Sidebar --- */
+.right-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    position: sticky;
+    top: 2rem;
+    min-width: 200px;
+    height: 500px;
+    justify-content: space-between;
+}
+
+.top-right-info {
+    text-align: right;
+    width: 100%;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+.time {
+    font-size: 5em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.date {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+.icons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    font-size: 1.5em;
+}
+.settings-toggle {
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.settings-toggle:hover {
+    color: var(--accent-color);
+}
+
+/* Dark Mode Toggle */
+.dark-mode-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.dark-mode-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    background: #ccc;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.dark-mode-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    display: block;
+}
+
+input:checked + .toggle-slider {
+    transform: translateX(20px);
+}
+
+input:checked ~ .dark-mode-toggle {
+    background: #2196F3;
+}
+
+/* --- AI Tools Panel (Collapsible) --- */
+.ai-tools-panel {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    max-height: 0;
+    pointer-events: none;
+}
+
+.ai-tools-panel.visible {
+    max-height: 400px;
+    pointer-events: all;
+}
+
+.ai-tools-toggle {
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--card-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 20px 0 0 20px;
+    padding: 12px 8px 12px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+    z-index: 50;
+    color: var(--text-secondary);
+}
+
+.ai-tools-toggle:hover {
+    right: -25px;
+    color: var(--accent-color);
+    box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+}
+
+.ai-tools-toggle i {
+    transition: transform 0.3s ease;
+    font-size: 0.9em;
+}
+
+.ai-tools-toggle.active i {
+    transform: rotate(180deg);
+}
+
+.ai-links-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    align-items: center;
+    padding-top: 1rem;
+    min-width: 180px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.ai-links-vertical::-webkit-scrollbar {
+    width: 1px;
+}
+
+.ai-links-vertical::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-links-vertical::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.05);
+    border-radius: 0.5px;
+}
+
+.ai-button, .add-tool-button {
+    width: 140px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    font-size: 0.8em;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+}
+.ai-button:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+.chatgpt { background-color: #094637; }
+.claudeai { background-color: #945104; }
+.gemini { background-color: #4f46e5; }
+
+.add-tool-button {
+    background-color: var(--card-surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+}
+.add-tool-button:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+.ai-button {
+    position: relative;
+}
+
+.ai-button .delete-tool,
+.ai-button .edit-tool {
+    position: absolute;
+    border-radius: 50%;
+    width: 16px; height: 16px;
+    font-size: 0.7em;
+    font-weight: bold;
+    display: flex;
+    justify-content: center; align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    line-height: 1;
+    pointer-events: none;
+}
+
+.ai-button:hover .delete-tool,
+.ai-button:hover .edit-tool {
+    opacity: 0.8;
+    pointer-events: auto;
+}
+
+.delete-tool {
+    top: -4px; right: -4px;
+    background-color: rgba(229, 62, 62, 0.8);
+    color: white;
+}
+
+.edit-tool {
+    top: -4px; left: -4px;
+    background-color: rgba(13, 110, 253, 0.8);
+    color: white;
+}
+
+.delete-tool:hover {
+    opacity: 1 !important;
+    background-color: #E53E3E;
+    transform: scale(1.1);
+}
+
+.edit-tool:hover {
+    opacity: 1 !important;
+    background-color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+/* --- Task Cards --- */
+.task-card {
+    background-color: var(--card-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 25px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.task-card:hover {
+    box-shadow: 0 25px 35px -5px var(--shadow-color), 0 15px 15px -5px var(--shadow-color), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.task-card h3.list-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+.edit-list-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 0.25rem;
+    border-radius: 12px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.edit-list-btn:hover {
+    color: var(--accent-color);
+    background-color: var(--bg-color);
+}
+.task-card ul {
+    list-style: none; padding: 0; margin: 0;
+    flex-grow: 1; overflow-y: auto;
+}
+.task-card ul::-webkit-scrollbar { width: 6px; }
+.task-card ul::-webkit-scrollbar-track { background: transparent; }
+.task-card ul::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+.task-card li {
+    display: flex; align-items: center; padding: 0.75rem;
+    border-radius: 16px; margin-bottom: 0.75rem; font-size: 0.9em;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    cursor: grab;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.task-card li:hover {
+    box-shadow: 0 8px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
+    transform: translateY(-1px);
+}
+.task-card li:last-child {
+    margin-bottom: 0;
+}
+.task-card li.dragging { opacity: 0.5; }
+.task-card ul.drag-over { outline: 2px dashed var(--accent-color); outline-offset: -5px; }
+.task-card li input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer; }
+.task-card li .fa-star { margin-right: 12px; color: var(--text-secondary); cursor: pointer; }
+.task-card li.starred-task .fa-star { color: #FBBF24; }
+.task-card li.completed { text-decoration: line-through; color: var(--text-secondary); opacity: 0.7; }
+.task-card li.aged-1 { background-color: var(--age-1-bg); color: var(--age-1-text); border-color: transparent; }
+.task-card li.aged-2 { background-color: var(--age-2-bg); color: var(--age-2-text); border-color: transparent; }
+.task-card li.aged-3 { background-color: var(--age-3-bg); color: var(--age-3-text); border-color: transparent; }
+.task-card li.aged-1 .fa-star, .task-card li.aged-2 .fa-star, .task-card li.aged-3 .fa-star { color: inherit; opacity: 0.7;}
+.task-card li .task-text { flex-grow: 1; margin-right: 10px; }
+.task-card li .remove-task { background: transparent; color: var(--text-secondary); border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; font-size: 0.9em; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s ease, color 0.2s ease; }
+.task-card li .remove-task:hover { background-color: var(--age-3-bg); color: var(--age-3-text); }
+.add-task { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.add-task input[type="text"] { flex-grow: 1; padding: 0.6rem 0.8rem; border-radius: 16px; font-size: 0.9em; color: var(--text-primary); background-color: var(--bg-color); border: 1px solid var(--border-color); }
+.add-task input[type="text"]:focus, .list-title-input:focus { outline: 2px solid var(--accent-color); outline-offset: -1px; border-color: transparent; }
+.add-task button { background-color: var(--accent-color); color: white; border: none; border-radius: 16px; padding: 0.6rem 1rem; cursor: pointer; font-size: 1em; transition: all 0.2s ease; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.add-task button:hover { opacity: 0.8; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+.list-title-input { font-size: 1.2em; font-weight: 600; padding: 0; border: none; background: transparent; width: 100%;}
+
+/* --- Meditation View --- */
+.meditation-view { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; display: flex; justify-content: center; align-items: center; color: #1A365D; opacity: 0; pointer-events: none; transition: opacity 0.5s ease, background 1s ease; flex-direction: column; gap: 20px; overflow: hidden; z-index: 101;}
+.meditation-view.active { opacity: 1; pointer-events: all; }
+.meditation-background-layer { position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; z-index: -1; pointer-events: none; background-size: 100% 100%; background-repeat: no-repeat; transition: background-image 1s ease, background 1s ease; }
+.meditation-background-layer:nth-child(2) { height: 75%; bottom: -10%; z-index: -2; }
+.meditation-background-layer:nth-child(3) { height: 90%; bottom: -20%; z-index: -3; }
+/* Forest Mode */
+.meditation-view.forest-mode { 
+    background: linear-gradient(135deg, #2d5016 0%, #4a7c59 25%, #68a085 50%, #86c3a0 75%, #a4e6bb 100%); 
+    color: #FFFFFF; 
+}
+.meditation-view.forest-mode .breathing-bubble { 
+    background-color: rgba(139, 195, 74, 0.8); 
+    box-shadow: 0 0 40px rgba(139, 195, 74, 0.8); 
+}
+.meditation-view.forest-mode::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="80" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="20" r="1.5" fill="rgba(255,255,255,0.08)"/><circle cx="60" cy="60" r="0.8" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="30" r="1.2" fill="rgba(255,255,255,0.09)"/></svg>');
+    animation: forestParticles 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Rain Mode */
+.meditation-view.rain-mode { 
+    background: linear-gradient(135deg, #1e2a3a 0%, #2c3e50 25%, #34495e 50%, #5d6d7e 75%, #708090 100%); 
+    color: #FFFFFF; 
+}
+.meditation-view.rain-mode .breathing-bubble { 
+    background-color: rgba(173, 216, 230, 0.8); 
+    box-shadow: 0 0 40px rgba(173, 216, 230, 0.8); 
+}
+
+/* Rain Clouds */
+.meditation-view.rain-mode::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -200px;
+    right: -200px;
+    height: 200px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200"><path d="M0,80 Q100,120 200,80 T400,80 T600,80 T800,80 V0 H0 Z" fill="rgba(0,0,0,0.25)"/><path d="M0,60 Q60,100 120,60 T240,60 T360,60 T480,60 T600,60 T720,60 T800,60 V0 H0 Z" fill="rgba(0,0,0,0.2)"/><path d="M0,40 Q80,80 160,40 T320,40 T480,40 T640,40 T800,40 V0 H0 Z" fill="rgba(0,0,0,0.15)"/></svg>');
+    background-size: 800px 200px;
+    animation: cloudDrift 40s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Rain Layers */
+.meditation-view.rain-mode::after {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Waves Mode */
+.meditation-view.waves-mode { 
+    background: linear-gradient(135deg, #1a237e 0%, #3949ab 25%, #5c6bc0 50%, #7986cb 75%, #9fa8da 100%); 
+    color: #FFFFFF; 
+}
+.meditation-view.waves-mode .breathing-bubble { 
+    background-color: rgba(70, 130, 180, 0.7); 
+    box-shadow: 0 0 40px rgba(70, 130, 180, 0.7); 
+}
+.meditation-view.waves-mode::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30"><path d="M0,15 Q25,5 50,15 T100,15 V30 H0 Z" fill="rgba(255,255,255,0.15)"/><path d="M0,20 Q20,10 40,20 T80,20 T100,20 V30 H0 Z" fill="rgba(255,255,255,0.1)"/><path d="M0,25 Q30,15 60,25 T100,25 V30 H0 Z" fill="rgba(255,255,255,0.08)"/></svg>');
+    animation: waveMotion 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.meditation-view.waves-mode::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><path d="M0,12 Q15,2 30,12 T60,12 T100,12 V20 H0 Z" fill="rgba(255,255,255,0.12)"/></svg>');
+    animation: waveMotion 6s ease-in-out infinite reverse;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.meditation-view.default-mode .breathing-bubble { 
+    background-color: rgba(56, 178, 172, 0.8); 
+    box-shadow: 0 0 40px rgba(56, 178, 172, 0.8); 
+}
+
+/* Background Animations */
+@keyframes forestParticles {
+    0% { transform: translateY(100vh) rotate(0deg); }
+    100% { transform: translateY(-100px) rotate(360deg); }
+}
+
+@keyframes rainDrop {
+    0% { transform: translateY(-100px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes cloudDrift {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-400px); }
+}
+
+@keyframes waveMotion {
+    0%, 100% { transform: translateX(0) scaleY(1); }
+    25% { transform: translateX(-10px) scaleY(1.1); }
+    50% { transform: translateX(0) scaleY(0.9); }
+    75% { transform: translateX(10px) scaleY(1.1); }
+}
+.prepare-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.2em; font-weight: 600; opacity: 0; transition: opacity 0.5s ease; z-index: 2; }
+.prepare-message.fade-out { animation: fadeOut 5s forwards; }
+@keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+.meditation-content { display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 1; position: relative; margin-top: -30px; }
+.breathing-bubble { width: 160px; height: 160px; border-radius: 50%; animation: pulse 16s infinite ease-in-out paused; transition: background-color 0.5s ease; display: flex; justify-content: center; align-items: center; position: relative; }
+@keyframes pulse { 0%{transform:scale(.9);opacity:.7} 25%{transform:scale(1.3);opacity:1} 50%{transform:scale(1.3);opacity:1} 87.5%{transform:scale(.9);opacity:.7} 100%{transform:scale(.9);opacity:.7} }
+.meditation-timer { font-family: 'Inter', sans-serif; font-size: 2.2em; font-weight: 600; text-align: center; cursor: pointer; }
+.meditation-timer-group { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 5px; width: auto; }
+.meditation-duration-input { padding: 6px 10px; border: 1px solid #CBD5E0; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 1em; width: 60px; text-align: center; background-color: rgba(255, 255, 255, 0.5); display: none; }
+
+/* Horizontal Timer Controls */
+.meditation-controls-horizontal { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 15px; }
+.meditation-time-control-circular { 
+    background-color: rgba(255, 255, 255, 0.15); 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 50%; 
+    width: 40px; 
+    height: 40px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    font-size: 1em; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    color: inherit; 
+}
+.meditation-time-control-circular:hover { 
+    background-color: rgba(255, 255, 255, 0.25); 
+    transform: scale(1.05); 
+}
+.meditation-time-control-circular:active { 
+    transform: scale(0.95); 
+}
+
+.start-stop-meditation { padding: 12px 25px; background-color: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255,255,255,0.4); border-radius: 25px; font-size: 1.1em; cursor: pointer; transition: background-color 0.3s ease, transform 0.1s ease; color: inherit; }
+.start-stop-meditation:hover { background-color: rgba(255, 255, 255, 0.4); }
+.start-stop-meditation:active { transform: scale(0.95); }
+.meditation-controls-bottom { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 15px; z-index: 1; }
+.meditation-mode-selector { display: flex; gap: 10px; }
+.meditation-mode-button { background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 6px 12px; font-size: 0.85em; cursor: pointer; transition: background-color 0.3s ease; min-width: 80px; text-align: center; color: inherit; }
+.meditation-mode-button.active { background-color: rgba(255, 255, 255, 0.35); font-weight: 600; }
+.meditation-mute-button { background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; font-size: 1em; cursor: pointer; transition: background-color 0.3s ease; color: inherit; }
+.meditation-mute-button.muted { background-color: rgba(255, 100, 100, 0.3); }
+
+/* Volume Controls Group */
+.volume-controls-group { display: flex; align-items: center; gap: 10px; }
+.volume-level-indicator { display: flex; align-items: end; gap: 2px; height: 24px; }
+.volume-bar { width: 4px; border-radius: 2px; transition: background-color 0.2s ease, height 0.2s ease; background-color: rgba(255, 255, 255, 0.2); }
+.volume-bar:nth-child(1) { height: 6px; } 
+.volume-bar:nth-child(2) { height: 10px; } 
+.volume-bar:nth-child(3) { height: 14px; } 
+.volume-bar:nth-child(4) { height: 18px; } 
+.volume-bar:nth-child(5) { height: 22px; }
+.meditation-view .volume-bar.active { background-color: rgba(255, 255, 255, 0.8); }
+
+/* --- Meditation Trigger (Fixed) --- */
+.meditation-trigger { position: fixed; bottom: 2rem; right: 2rem; width: 50px; height: 50px; border-radius: 50%; background-color: #34d399; color: white; border: none; font-size: 1.5em; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 8px 16px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease; z-index: 100; }
+.meditation-trigger:hover { transform: scale(1.05) translateY(-1px); box-shadow: 0 12px 24px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.2); }
+
+/* Sine Wave Animation */
+.sine-wave {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 24px;
+    height: 16px;
+}
+
+.wave-line {
+    width: 2px;
+    height: 100%;
+    background-color: white;
+    border-radius: 1px;
+    animation: wave 2s ease-in-out infinite;
+}
+
+.wave-line:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.wave-line:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.wave-line:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes wave {
+    0%, 100% {
+        transform: scaleY(0.3);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+/* --- Modals & Toasts --- */
+.modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center; }
+.modal-content { background-color: var(--card-surface); padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 20px; color: var(--text-primary); }
+.modal-content h2 { margin-top: 0; color: var(--text-primary); }
+.modal-content input, .modal-content select { padding: 10px; border: 1px solid var(--border-color); border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 1em; color: var(--text-primary); background-color: var(--bg-color); width: 100%; box-sizing: border-box; }
+.modal-content button { padding: 10px 20px; background-color: var(--accent-color); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 1em; align-self: flex-end; transition: opacity 0.2s ease; }
+.modal-content button:hover { opacity: 0.8; }
+.close-modal { color: var(--text-secondary); align-self: flex-end; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 0.5; }
+.setting-group { display: flex; flex-direction: column; gap: 8px; }
+#toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.toast { background-color: #212529; color: #FFFFFF; padding: 10px 20px; border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); font-size: 0.9em; opacity: 0; transform: translateY(20px); transition: opacity 0.3s ease, transform 0.3s ease; }
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* --- Cursor Follower --- */
+.cursor-dot, .cursor-circle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.cursor-dot {
+    width: 3px;
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+    will-change: transform;
+}
+
+.cursor-circle {
+    width: 24px;
+    height: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    background-color: transparent;
+    top: 0;
+    left: 0;
+    will-change: transform;
+}
+
+/* Dark mode cursor colors */
+body.dark-mode .cursor-dot {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+body.dark-mode .cursor-circle {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Light mode cursor colors */
+body:not(.dark-mode) .cursor-dot {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+body:not(.dark-mode) .cursor-circle {
+    border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Show cursor elements when mouse is active */
+body.cursor-active .cursor-dot,
+body.cursor-active .cursor-circle {
+    opacity: 1;
+}
+
+/* Hide cursor elements in meditation mode for cleaner experience */
+.meditation-view.active ~ .cursor-dot,
+.meditation-view.active ~ .cursor-circle {
+    opacity: 0.3;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        max-width: 100%;
+    }
+    
+    .main-content {
+        flex-direction: column;
+        max-width: 100%;
+        gap: 1.5rem;
+    }
+    
+    .main-content .task-card {
+        max-width: 100%;
+    }
+    
+    .right-sidebar {
+        align-items: center;
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .top-right-info {
+        text-align: center;
+    }
+    
+    .time {
+        font-size: 3em;
+    }
+    
+    .icons {
+        justify-content: center;
+    }
+    
+    .ai-tools-toggle {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        border-radius: 20px;
+        padding: 12px;
+        margin-top: 1rem;
+    }
+    
+    .ai-tools-panel {
+        position: relative;
+        transform: none;
+        opacity: 1;
+        max-height: none;
+        pointer-events: all;
+        margin-top: 1rem;
+    }
+    
+    .ai-tools-panel.visible {
+        transform: none;
+    }
+    
+    .meditation-trigger {
+        bottom: 1rem;
+        right: 1rem;
+        width: 45px;
+        height: 45px;
+    }
+    
+    .task-card {
+        height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    .time {
+        font-size: 2.5em;
+    }
+    
+    .task-card {
+        height: 350px;
+        padding: 1rem;
+    }
+    
+    .ai-links-vertical {
+        min-width: auto;
+    }
+    
+    .meditation-trigger {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .sine-wave {
+        width: 20px;
+        height: 14px;
+    }
+}

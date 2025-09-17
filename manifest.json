@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Minimalist Task Manager",
+  "version": "1.1",
+  "description": "A minimalist task manager and multi-mode meditation zone to enhance focus and productivity.",
+  "permissions": [
+    "storage",
+    "action",
+    "notifications"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icons/list.png",
+      "48": "assets/icons/list (1).png",
+      "128": "assets/icons/list (2).png"
+    }
+  },
+  "icons": {
+    "16": "assets/icons/list.png",
+    "48": "assets/icons/list (1).png",
+    "128": "assets/icons/list (2).png"
+  },
+  "chrome_url_overrides": {
+    "newtab": "popup.html"
+  }
+}

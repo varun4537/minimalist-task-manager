@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Task Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- The task-manager-view is a logical container. Its children are the direct grid items -->
+        <div class="task-manager-view">
+            <!-- Grid Item 1: Main Content Area -->
+            <div class="main-content">
+                <div class="task-card" data-list-id="today">
+                    <div class="list-header">
+                        <h3 class="list-title" title="Double-click to rename">Daily Tasks</h3>
+                        <button class="edit-list-btn" title="Edit list name"><i class="fas fa-edit"></i></button>
+                    </div>
+                    <ul id="today-task-list"></ul>
+                    <div class="add-task">
+                        <input type="text" id="new-today-task" placeholder="Add a new task...">
+                        <button id="add-today-task-btn" title="Add Task"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="task-card" data-list-id="weekly">
+                    <div class="list-header">
+                        <h3 class="list-title" title="Double-click to rename">Weekly Tasks</h3>
+                        <button class="edit-list-btn" title="Edit list name"><i class="fas fa-edit"></i></button>
+                    </div>
+                    <ul id="weekly-task-list"></ul>
+                     <div class="add-task">
+                        <input type="text" id="new-weekly-task" placeholder="Add a new task...">
+                        <button id="add-weekly-task-btn" title="Add Task"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Item 2: Right Sidebar -->
+            <div class="right-sidebar">
+                <div class="top-right-info">
+                    <div class="time"></div>
+                    <div class="date"></div>
+                <div class="icons">
+                         <div class="dark-mode-toggle-container">
+                             <label class="dark-mode-toggle" title="Toggle Dark/Light Mode">
+                                 <input type="checkbox" id="dark-mode-checkbox">
+                                 <span class="toggle-slider">
+                                     <span class="toggle-sun">☀️</span>
+                                     <span class="toggle-moon">🌙</span>
+                                 </span>
+                             </label>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- AI Tools Panel -->
+                <div class="ai-tools-panel visible">
+                    <div class="ai-links-vertical">
+                        <button class="add-tool-button">+</button>
+                    </div>
+                </div>
+                
+                <!-- AI Tools Toggle Arrow -->
+                <div class="ai-tools-toggle" title="Show/Hide AI Tools">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+            </div>
+        </div>
+
+        <button class="meditation-trigger" title="Enter Meditation Zone">
+             <div class="sine-wave">
+                 <div class="wave-line"></div>
+                 <div class="wave-line"></div>
+                 <div class="wave-line"></div>
+             </div>
+        </button>
+        
+        <!-- Meditation View (Complete) -->
+        <div class="meditation-view">
+            <div class="meditation-background-layer"></div>
+            <div class="meditation-background-layer"></div>
+            <div class="meditation-background-layer"></div>
+            <div class="prepare-message">Prepare to relax</div>
+            <div class="meditation-content">
+                <div class="breathing-bubble">
+                    <div class="meditation-timer" title="Click to edit duration">5:00</div>
+                </div>
+                <div class="meditation-timer-group">
+                    <input type="number" id="meditation-duration-input" class="meditation-duration-input" min="1" value="5">
+                </div>
+                <div class="meditation-controls-horizontal">
+                    <button id="meditation-duration-input-minus" class="meditation-time-control-circular" title="Decrease time"><i class="fas fa-minus"></i></button>
+                    <button class="start-stop-meditation">Start</button>
+                    <button id="meditation-duration-input-plus" class="meditation-time-control-circular" title="Increase time"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="meditation-controls-bottom">
+                <div class="meditation-mode-selector"></div>
+                <div class="volume-controls-group">
+                    <!-- Mute button is dynamically added here by JS -->
+                    <div class="volume-level-indicator">
+                        <div class="volume-bar" data-level="1"></div>
+                        <div class="volume-bar" data-level="2"></div>
+                        <div class="volume-bar" data-level="3"></div>
+                        <div class="volume-bar" data-level="4"></div>
+                        <div class="volume-bar" data-level="5"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        
+        <!-- Custom Tool Modal (Complete) -->
+        <div id="custom-tool-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" title="Close">&times;</span>
+                <h2>Add Custom AI Tool</h2>
+                <label for="tool-label">Tool Label:</label>
+                <input type="text" id="tool-label" placeholder="e.g., Mistral">
+                <label for="tool-url">Tool URL (https://):</label>
+                <input type="text" id="tool-url" placeholder="e.g., https://mistral.ai/">
+                <button id="add-custom-tool">Add Tool</button>
+            </div>
+        </div>
+
+        <!-- Edit Tool Modal -->
+        <div id="edit-tool-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" title="Close">&times;</span>
+                <h2>Edit AI Tool</h2>
+                <label for="edit-tool-label">Tool Label:</label>
+                <input type="text" id="edit-tool-label" placeholder="e.g., ChatGPT">
+                <label for="edit-tool-url">Tool URL (https://):</label>
+                <input type="text" id="edit-tool-url" placeholder="e.g., https://chat.openai.com/">
+                <button id="save-edit-tool">Save Changes</button>
+            </div>
+        </div>
+        
+        <div id="toast-container"></div>
+        
+        <!-- Cursor Follower Elements -->
+        <div class="cursor-dot"></div>
+        <div class="cursor-circle"></div>
+    </div>
+    <script src="js/popup.js"></script>
+</body>
+</html>
