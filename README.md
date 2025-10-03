@@ -4,14 +4,45 @@ A sophisticated Chrome extension that combines task management with meditation f
 
 ## 🚀 Features
 
-- **Task Management**: Daily and weekly task lists with drag-and-drop, starring, and aging indicators
-- **Meditation Zone**: Multi-mode meditation with breathing animations, timers, and ambient sounds
-- **Quick Notes**: Instant note-taking for thoughts and ideas (Ctrl+S to toggle)
-- **Keyboard Shortcuts**: Efficient navigation with hotkeys (Ctrl+N for new task, Ctrl+M for meditation, etc.)
-- **Gentle Notifications**: Browser notifications for meditation session start/end
+### Task Management
+- **Daily Tasks**: Add, edit, delete, and mark tasks as complete with visual indicators
+- **Weekly Tasks**: Long-term task planning with starring for priority tasks
+- **Drag & Drop**: Reorder tasks easily with intuitive drag-and-drop functionality
+- **Aging Indicators**: Visual cues for task age to help prioritize
+- **Starring**: Mark important tasks with stars for quick identification
+
+### Meditation Zone
+- **Multi-Mode Meditation**: Choose from different meditation styles (breathing, focus, etc.)
+- **Breathing Animations**: Guided breathing with visual animations
+- **Timers**: Customizable session lengths with countdown timers
+- **Ambient Sounds**: Background sounds like forest, rain, and waves to enhance meditation
+- **Session Notifications**: Gentle browser notifications for session start and end
+
+### Quick Notes
+- **Instant Access**: Toggle quick notes panel with Ctrl+S
+- **Persistent Storage**: Notes are saved locally and synced across devices
+
+### Keyboard Shortcuts
+- `Ctrl+N` / `Cmd+N`: Focus on new daily task input
+- `Ctrl+W` / `Cmd+W`: Focus on new weekly task input
+- `Ctrl+M` / `Cmd+M`: Toggle meditation zone
+- `Ctrl+S` / `Cmd+S`: Toggle quick notes panel
+- `Escape`: Close modals or exit meditation
+
+### Visual Enhancements
 - **Cursor Follower**: Smooth, fluid cursor following effect with dot and circle elements
-- **Customization**: Multiple themes, dark mode, custom AI tool links
-- **Chrome Integration**: Badge notifications, storage sync, new tab override
+- **Themes**: Multiple color themes including dark mode
+- **Daily Backgrounds**: Rotating gradient backgrounds for visual variety
+
+### Customization
+- **Custom AI Tools**: Add quick links to your favorite AI tools
+- **Dark Mode**: Toggle between light and dark themes
+- **Settings Sync**: All preferences sync across your Chrome browsers
+
+### Chrome Integration
+- **New Tab Override**: Extension loads as your new tab page
+- **Badge Notifications**: Visual indicators on the extension icon
+- **Storage Sync**: Data syncs across signed-in Chrome browsers
 
 ## 📁 Project Structure
 
@@ -98,6 +129,10 @@ The structure is optimized for extensibility:
 - **Permissions**: storage, notifications
 - **Browser Compatibility**: Chrome, Edge, other Chromium-based browsers
 - **Performance**: Optimized for 60fps animations and minimal memory usage
+
+## 🔒 Privacy Policy
+
+This extension respects your privacy. All data is stored locally in your browser and synced using Chrome's built-in synchronization. No personal data is collected or transmitted to external servers. For complete details, see [PRIVACY.md](PRIVACY.md).
 
 ## 📈 Future Enhancements
 

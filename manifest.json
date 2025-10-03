@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Minimalist Task Manager",
-  "version": "1.1",
+  "version": "1.2",
   "description": "A minimalist task manager and multi-mode meditation zone to enhance focus and productivity.",
   "permissions": [
     "storage",
