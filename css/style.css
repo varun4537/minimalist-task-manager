@@ -1021,3 +1021,196 @@ body.cursor-active .cursor-circle {
         height: 14px;
     }
 }
+
+/* NEW FEATURES START - Easily undo by removing this section */
+/* 1. Quick Notes Section Styles */
+.quick-notes-container {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 50;
+}
+
+.quick-notes-icon {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    font-size: 1.5em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+.quick-notes-icon:hover {
+    transform: scale(1.05);
+    opacity: 1;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+}
+.quick-notes-panel {
+    position: absolute;
+    bottom: 4rem;
+    left: 0;
+    width: 300px;
+    height: 200px;
+    background: rgba(245, 243, 237, 0.9); /* Light fallback */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(234, 230, 225, 0.6); /* Light border */
+    border-radius: 12px;
+    padding: 1rem;
+    overflow: hidden;
+    min-width: 250px;
+    min-height: 150px;
+    max-width: 500px;
+    max-height: 400px;
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9em;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(10px);
+}
+.quick-notes-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.font-size-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease;
+}
+.font-size-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+.quick-notes-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nw-resize;
+    background: linear-gradient(-45deg, transparent 0%, transparent 40%, var(--accent-color) 40%, var(--accent-color) 60%, transparent 60%, transparent 100%);
+    border-radius: 0 12px 0 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+.quick-notes-resize-handle:hover {
+    opacity: 1;
+}
+body.dark-mode .quick-notes-panel {
+    background: rgba(42, 42, 42, 0.9); /* Dark fallback */
+    border-color: rgba(64, 64, 64, 0.6);
+}
+.quick-notes-panel textarea {
+    width: 100%;
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+.quick-notes-panel.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3. Adjusted Rounded Corners (Subtler) */
+.task-card {
+    border-radius: 20px; /* Reduced from 25px */
+}
+.task-card li,
+.add-task input[type="text"],
+.add-task button {
+    border-radius: 12px; /* Reduced from 16px */
+}
+
+/* 5. Task Completion Animation */
+.task-card li.completion-anim {
+    position: relative;
+    animation: completionGlow 0.5s ease-out;
+}
+@keyframes completionGlow {
+    0% { box-shadow: 0 0 0 rgba(95, 133, 117, 0); transform: scale(1); }
+    50% { box-shadow: 0 0 20px rgba(95, 133, 117, 0.6); transform: scale(1.02); }
+    100% { box-shadow: 0 0 0 rgba(95, 133, 117, 0); transform: scale(1); }
+}
+.task-card li.completion-anim::before,
+.task-card li.completion-anim::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10px; /* Near checkbox */
+    width: 4px;
+    height: 4px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    animation: burst 0.8s ease-out forwards;
+    z-index: 10;
+}
+.task-card li.completion-anim::after {
+    width: 6px;
+    height: 6px;
+    animation-delay: 0.1s;
+    background: #FBBF24; /* Gold accent */
+}
+body.dark-mode .task-card li.completion-anim::before,
+body.dark-mode .task-card li.completion-anim::after {
+    background: #7C3AED; /* Purple for dark */
+}
+@keyframes burst {
+    0% {
+        transform: translate(0, 0) scale(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--dx), var(--dy)) scale(1) rotate(720deg);
+        opacity: 0;
+    }
+}
+/* Additional particles via JS, but base CSS ready */
+
+/* Enhanced Toast for Completion */
+.toast.completion-toast {
+    background: linear-gradient(135deg, var(--accent-color), #7C3AED);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.toast.completion-toast::before {
+    content: '\f058'; /* fa-check-circle */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 1.2em;
+}
+/* NEW FEATURES END */

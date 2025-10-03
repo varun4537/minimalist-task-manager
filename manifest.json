@@ -5,7 +5,6 @@
   "description": "A minimalist task manager and multi-mode meditation zone to enhance focus and productivity.",
   "permissions": [
     "storage",
-    "action",
     "notifications"
   ],
   "action": {

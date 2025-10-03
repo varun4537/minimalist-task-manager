@@ -66,6 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_AI_TOOLS = 10;
     let editingToolIndex = -1;
 
+    // NEW FEATURES
+    let ENABLE_NEW_FEATURES = true;
+
     // --- Cursor Follower State ---
     let cursorDot = null;
     let cursorCircle = null;
@@ -97,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         storageAPI.get([
             'todayTasks', 'weeklyTasks', 'aiTools', 'isDarkMode', 'listData',
-            'meditationDuration', 'currentMeditationModeName', 'isMuted', 'meditationVolume'
+            'meditationDuration', 'currentMeditationModeName', 'isMuted', 'meditationVolume', 'quickNotes', 'notesFontSize'
         ], (result) => {
             // Dark Mode
             const isDarkMode = result.isDarkMode || false;
@@ -144,6 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
             applyMuteState(isMuted);
             meditationAudio.volume = currentVolume;
             updateVolumeScaleDisplay();
+
+            // Quick Notes
+            const quickNotes = result.quickNotes || '';
+            const notesFontSize = result.notesFontSize || 14; // default 14px
+            const quickNotesTextarea = document.querySelector('.quick-notes-panel textarea');
+            if (quickNotesTextarea) {
+                quickNotesTextarea.value = quickNotes;
+                quickNotesTextarea.style.fontSize = notesFontSize + 'px';
+            }
         });
     }
 
@@ -176,6 +188,18 @@ document.addEventListener('DOMContentLoaded', () => {
             toast.classList.remove('show');
             toast.addEventListener('transitionend', () => toast.remove());
         }, 3000);
+    }
+
+    function showMeditationNotification(title, message) {
+        if (typeof chrome !== 'undefined' && chrome.notifications) {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'assets/icons/list.png',
+                title: title,
+                message: message,
+                silent: true // Gentle notification
+            });
+        }
     }
 
     // --- Task List Functions ---
@@ -431,6 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
         meditationTimerElement.style.display = 'block';
         prepareMessageElement.style.opacity = 1;
         prepareMessageElement.classList.add('fade-out');
+
+        // Show start notification
+        showMeditationNotification('Meditation Session Started', `Beginning ${Math.floor(meditationDuration / 60)}-minute ${currentMeditationMode.name} meditation. Find your center.`);
+
         setTimeout(() => {
             prepareMessageElement.style.opacity = 0;
             prepareMessageElement.classList.remove('fade-out');
@@ -449,6 +477,11 @@ document.addEventListener('DOMContentLoaded', () => {
         meditationAudio.pause();
         meditationAudio.currentTime = 0;
         meditationAudio.volume = currentVolume;
+
+        // Show end notification
+        const sessionDuration = Math.floor((meditationDuration - timeRemaining) / 60);
+        showMeditationNotification('Meditation Session Complete', `Well done! You completed a ${sessionDuration}-minute ${currentMeditationMode.name} session. Take a moment to breathe.`);
+
         meditationView.classList.remove('active');
         setTimeout(() => {
             taskManagerView.style.opacity = 1;
@@ -751,6 +784,83 @@ document.addEventListener('DOMContentLoaded', () => {
         timeElement.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         dateElement.textContent = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
     }
+
+    function toggleQuickNotes() {
+        const quickNotesPanel = document.querySelector('.quick-notes-panel');
+        if (quickNotesPanel) {
+            quickNotesPanel.classList.toggle('visible');
+        }
+    }
+
+    function saveQuickNotes() {
+        const quickNotesTextarea = document.querySelector('.quick-notes-panel textarea');
+        if (quickNotesTextarea) {
+            const notes = quickNotesTextarea.value;
+            chrome.storage.sync.set({ quickNotes: notes });
+        }
+    }
+
+    function adjustNotesFontSize(action) {
+        const textarea = document.querySelector('.quick-notes-panel textarea');
+        if (!textarea) return;
+
+        let currentSize = parseInt(window.getComputedStyle(textarea).fontSize);
+        let newSize;
+
+        if (action === 'increase') {
+            newSize = Math.min(24, currentSize + 2);
+        } else if (action === 'decrease') {
+            newSize = Math.max(10, currentSize - 2);
+        }
+
+        if (newSize !== currentSize) {
+            textarea.style.fontSize = newSize + 'px';
+            chrome.storage.sync.set({ notesFontSize: newSize });
+        }
+    }
+
+    // Quick Notes Resize Functionality
+    let isResizing = false;
+    let initialWidth, initialHeight, initialMouseX, initialMouseY;
+
+    function initQuickNotesResize() {
+        const handle = document.querySelector('.quick-notes-resize-handle');
+        const panel = document.querySelector('.quick-notes-panel');
+
+        if (!handle || !panel) return;
+
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            initialMouseX = e.clientX;
+            initialMouseY = e.clientY;
+            initialWidth = panel.offsetWidth;
+            initialHeight = panel.offsetHeight;
+            document.body.style.cursor = 'nw-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const deltaX = e.clientX - initialMouseX;
+            const deltaY = e.clientY - initialMouseY;
+
+            let newWidth = Math.max(250, Math.min(500, initialWidth + deltaX));
+            let newHeight = Math.max(150, Math.min(400, initialHeight - deltaY));
+
+            panel.style.width = newWidth + 'px';
+            panel.style.height = newHeight + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
+    }
     function getDaysSinceCreation(createdAt) { if (!createdAt) return 0; return Math.floor((new Date() - new Date(createdAt)) / 86400000); }
     function getWeeksSinceCreation(createdAt) { return Math.floor(getDaysSinceCreation(createdAt) / 7); }
     
@@ -833,7 +943,42 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { if (meditationView.classList.contains('active')) endMeditation(); if (customToolModal.style.display === 'flex') customToolModal.style.display = 'none'; if (editToolModal.style.display === 'flex') editToolModal.style.display = 'none'; } });
+    document.addEventListener('keydown', (event) => {
+        // Escape key handling
+        if (event.key === 'Escape') {
+            if (meditationView.classList.contains('active')) endMeditation();
+            if (customToolModal.style.display === 'flex') customToolModal.style.display = 'none';
+            if (editToolModal.style.display === 'flex') editToolModal.style.display = 'none';
+        }
+
+        // Ctrl/Cmd + N: Focus on new daily task input
+        if ((event.ctrlKey || event.metaKey) && event.key === 'n') {
+            event.preventDefault();
+            newTodayTaskInput.focus();
+        }
+
+        // Ctrl/Cmd + M: Toggle meditation
+        if ((event.ctrlKey || event.metaKey) && event.key === 'm') {
+            event.preventDefault();
+            if (meditationView.classList.contains('active')) {
+                endMeditation();
+            } else {
+                enterMeditationModeUI();
+            }
+        }
+
+        // Ctrl/Cmd + S: Toggle quick notes
+        if ((event.ctrlKey || event.metaKey) && event.key === 's' && ENABLE_NEW_FEATURES) {
+            event.preventDefault();
+            toggleQuickNotes();
+        }
+
+        // Ctrl/Cmd + W: Toggle weekly task input
+        if ((event.ctrlKey || event.metaKey) && event.key === 'w') {
+            event.preventDefault();
+            newWeeklyTaskInput.focus();
+        }
+    });
 
     // Drag and Drop Listeners
     document.addEventListener('dragstart', handleDragStart);
@@ -853,4 +998,38 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeCursorFollower, 100);
 
     initializeApp();
+
+    // NEW: Enhanced notes setup in init for better timing
+    if (ENABLE_NEW_FEATURES) {
+        setTimeout(() => {
+            const quickNotesIcon = document.querySelector('.quick-notes-icon');
+            const quickNotesPanel = document.querySelector('.quick-notes-panel');
+            const quickNotesTextarea = quickNotesPanel ? quickNotesPanel.querySelector('textarea') : null;
+
+            console.log('Setting up notes listeners:', { icon: !!quickNotesIcon, panel: !!quickNotesPanel, textarea: !!quickNotesTextarea });
+
+            if (quickNotesIcon) {
+                quickNotesIcon.addEventListener('click', () => {
+                    console.log('Notes icon clicked');
+                    toggleQuickNotes();
+                });
+            }
+            if (quickNotesTextarea) {
+                quickNotesTextarea.addEventListener('input', saveQuickNotes);
+                quickNotesTextarea.addEventListener('blur', saveQuickNotes);
+            }
+
+            // Initialize resize functionality
+            initQuickNotesResize();
+
+            // Font size controls
+            const fontSizeBtns = document.querySelectorAll('.font-size-btn');
+            fontSizeBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const action = e.target.dataset.action;
+                    adjustNotesFontSize(action);
+                });
+            });
+        }, 500);
+    }
 });

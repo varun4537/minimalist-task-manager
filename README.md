@@ -6,6 +6,9 @@ A sophisticated Chrome extension that combines task management with meditation f
 
 - **Task Management**: Daily and weekly task lists with drag-and-drop, starring, and aging indicators
 - **Meditation Zone**: Multi-mode meditation with breathing animations, timers, and ambient sounds
+- **Quick Notes**: Instant note-taking for thoughts and ideas (Ctrl+S to toggle)
+- **Keyboard Shortcuts**: Efficient navigation with hotkeys (Ctrl+N for new task, Ctrl+M for meditation, etc.)
+- **Gentle Notifications**: Browser notifications for meditation session start/end
 - **Cursor Follower**: Smooth, fluid cursor following effect with dot and circle elements
 - **Customization**: Multiple themes, dark mode, custom AI tool links
 - **Chrome Integration**: Badge notifications, storage sync, new tab override
@@ -76,6 +79,13 @@ The structure is optimized for extensibility:
 
 ## 🎨 Customization
 
+### Keyboard Shortcuts
+- `Ctrl+N` / `Cmd+N`: Focus on new daily task input
+- `Ctrl+W` / `Cmd+W`: Focus on new weekly task input
+- `Ctrl+M` / `Cmd+M`: Toggle meditation zone
+- `Ctrl+S` / `Cmd+S`: Toggle quick notes panel
+- `Escape`: Close modals or exit meditation
+
 ### Cursor Follower Settings
 - Dot size: 3px (configurable in CSS)
 - Circle size: 24px (configurable in CSS)
@@ -85,7 +95,7 @@ The structure is optimized for extensibility:
 ## 🔧 Technical Details
 
 - **Manifest Version**: 3
-- **Permissions**: storage, action, notifications
+- **Permissions**: storage, notifications
 - **Browser Compatibility**: Chrome, Edge, other Chromium-based browsers
 - **Performance**: Optimized for 60fps animations and minimal memory usage
 
