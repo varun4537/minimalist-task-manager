@@ -41,9 +41,15 @@
             <!-- Grid Item 2: Right Sidebar -->
             <div class="right-sidebar">
                 <div class="top-right-info">
-                    <div class="time"></div>
-                    <div class="date"></div>
+                    <div class="clock-group">
+                        <div class="time"></div>
+                        <div class="day"></div>
+                        <div class="date"></div>
+                    </div>
                 <div class="icons">
+                        <button class="settings-toggle" title="Settings">
+                            <i class="fas fa-cog"></i>
+                        </button>
                          <div class="dark-mode-toggle-container">
                              <label class="switch" title="Toggle Dark/Light Mode">
                                  <input id="dark-mode-checkbox" type="checkbox" />
@@ -105,6 +111,7 @@
                          </div>
                     </div>
                 </div>
+
 
                 <!-- AI Tools Panel -->
                 <div class="ai-tools-panel">
@@ -202,6 +209,167 @@
                 <label for="edit-tool-url">Tool URL (https://):</label>
                 <input type="text" id="edit-tool-url" placeholder="e.g., https://chat.openai.com/">
                 <button id="save-edit-tool">Save Changes</button>
+            </div>
+        </div>
+
+        <!-- Settings Overlay -->
+        <div id="settings-overlay" class="settings-overlay" aria-hidden="true">
+            <div class="settings-backdrop"></div>
+            <aside class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+                <div class="settings-panel-header">
+                    <h2 id="settings-title">Settings</h2>
+                    <button class="settings-close-btn" title="Close Settings">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <section class="settings-section">
+                    <h3>Display</h3>
+                    <div class="setting-item">
+                        <label for="font-size-select">Font Size</label>
+                        <select id="font-size-select">
+                            <option value="small">Small</option>
+                            <option value="medium">Medium (Default)</option>
+                            <option value="large">Large</option>
+                        </select>
+                    </div>
+                    <div class="setting-item checkbox-item">
+                        <input type="checkbox" id="custom-cursor-toggle">
+                        <label for="custom-cursor-toggle">Enable Zen Cursor Mode</label>
+                    </div>
+                </section>
+
+            <section class="settings-section">
+                <h3>Behavior</h3>
+                <div class="setting-item checkbox-item">
+                    <input type="checkbox" id="keep-quick-links-visible">
+                    <label for="keep-quick-links-visible">Keep Quick Links Visible</label>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>Statistics</h3>
+                <div class="setting-item stats-summary">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Meditation Time</span>
+                            <span class="stat-value" id="stat-meditation-time">0h 0m</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Meditation Sessions</span>
+                            <span class="stat-value" id="stat-meditation-sessions">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Tasks Completed</span>
+                            <span class="stat-value" id="stat-tasks-completed">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Tasks Closed</span>
+                            <span class="stat-value" id="stat-tasks-closed">0</span>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button id="view-stats-btn" class="settings-action-btn">
+                            View Detailed Stats
+                        </button>
+                        <button id="reset-stats-btn" class="settings-action-btn danger">
+                            Reset Statistics
+                        </button>
+                    </div>
+                </div>
+            </section>
+            </aside>
+        </div>
+
+        <!-- Stats Overlay -->
+        <div id="stats-overlay" class="stats-overlay" aria-hidden="true">
+            <div class="stats-backdrop"></div>
+            <div class="stats-panel" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+                <div class="stats-header">
+                    <div class="stats-header-main">
+                        <button class="stats-close-btn" title="Back to Settings">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <h2 id="stats-title">Productivity Insights</h2>
+                            <p class="stats-subtitle">Explore your meditation and task trends</p>
+                        </div>
+                    </div>
+                    <div class="stats-period-controls">
+                        <button class="stats-period-btn active" data-period="all">All Time</button>
+                        <button class="stats-period-btn" data-period="daily">Daily</button>
+                        <button class="stats-period-btn" data-period="weekly">Weekly</button>
+                        <button class="stats-period-btn" data-period="monthly">Monthly</button>
+                        <button class="stats-period-btn" data-period="yearly">Yearly</button>
+                    </div>
+                </div>
+
+                <div class="stats-content">
+                    <section class="stats-section">
+                        <h3>Meditation</h3>
+                        <div class="stats-cards-grid">
+                            <article class="stats-large-card">
+                                <header>
+                                    <span>Total Time</span>
+                                    <small class="stats-trend" id="meditation-time-trend"></small>
+                                </header>
+                                <strong id="stats-meditation-total">0h 0m</strong>
+                                <footer>
+                                    <span>Average Session</span>
+                                    <strong id="stats-meditation-average">0m</strong>
+                                </footer>
+                            </article>
+                            <article class="stats-card">
+                                <span>Sessions Completed</span>
+                                <strong id="stats-meditation-sessions">0</strong>
+                            </article>
+                            <article class="stats-card">
+                                <span>Favorite Mode</span>
+                                <strong id="stats-meditation-favorite">—</strong>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="stats-section">
+                        <h3>Tasks</h3>
+                        <div class="stats-cards-grid">
+                            <article class="stats-large-card">
+                                <header>
+                                    <span>Tasks Completed</span>
+                                    <small class="stats-trend" id="tasks-completed-trend"></small>
+                                </header>
+                                <strong id="stats-tasks-completed">0</strong>
+                                <footer>
+                                    <span>Completion Rate</span>
+                                    <strong id="stats-tasks-completion-rate">0%</strong>
+                                </footer>
+                            </article>
+                            <article class="stats-card">
+                                <span>Tasks Closed</span>
+                                <strong id="stats-tasks-closed">0</strong>
+                            </article>
+                            <article class="stats-card">
+                                <span>Most Productive Day</span>
+                                <strong id="stats-tasks-productive-day">—</strong>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="stats-section stats-history">
+                        <h3>Session History</h3>
+                        <div class="stats-history-table">
+                            <header>
+                                <span>Date</span>
+                                <span>Meditation</span>
+                                <span>Tasks Completed</span>
+                                <span>Tasks Closed</span>
+                            </header>
+                            <div id="stats-history-rows" class="stats-history-rows">
+                                <p class="stats-empty">Start meditating and completing tasks to see your history here.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
         

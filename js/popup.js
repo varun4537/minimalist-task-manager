@@ -18,6 +18,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const customToolModal = document.getElementById('custom-tool-modal');
     const closeModalButtons = document.querySelectorAll('.close-modal');
     
+    // Settings & Stats
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const settingsPanel = settingsOverlay ? settingsOverlay.querySelector('.settings-panel') : null;
+    const settingsToggleButton = document.querySelector('.settings-toggle');
+    const settingsCloseButton = document.querySelector('.settings-close-btn');
+    const fontSizeSelect = document.getElementById('font-size-select');
+    const zenCursorToggle = document.getElementById('custom-cursor-toggle');
+    const quickLinksToggle = document.getElementById('keep-quick-links-visible');
+    const viewStatsButton = document.getElementById('view-stats-btn');
+    const resetStatsButton = document.getElementById('reset-stats-btn');
+    const statsOverlay = document.getElementById('stats-overlay');
+    const statsPanel = statsOverlay ? statsOverlay.querySelector('.stats-panel') : null;
+    const statsCloseButton = document.querySelector('.stats-close-btn');
+    const statsPeriodButtons = document.querySelectorAll('.stats-period-btn');
+    const statsMeditationTotal = document.getElementById('stats-meditation-total');
+    const statsMeditationAverage = document.getElementById('stats-meditation-average');
+    const statsMeditationFavorite = document.getElementById('stats-meditation-favorite');
+    const statsMeditationSessions = document.getElementById('stats-meditation-sessions');
+    const statsMeditationTrend = document.getElementById('meditation-time-trend');
+    const statsTasksCompleted = document.getElementById('stats-tasks-completed');
+    const statsTasksCompletionRate = document.getElementById('stats-tasks-completion-rate');
+    const statsTasksClosed = document.getElementById('stats-tasks-closed');
+    const statsTasksProductiveDay = document.getElementById('stats-tasks-productive-day');
+    const statsTasksTrend = document.getElementById('tasks-completed-trend');
+    const statsHistoryContainer = document.getElementById('stats-history-rows');
+    const settingsStatMeditationTime = document.getElementById('stat-meditation-time');
+    const settingsStatMeditationSessions = document.getElementById('stat-meditation-sessions');
+    const settingsStatTasksCompleted = document.getElementById('stat-tasks-completed');
+    const settingsStatTasksClosed = document.getElementById('stat-tasks-closed');
+    const toastContainer = document.getElementById('toast-container');
+    const quickNotesIcon = document.querySelector('.quick-notes-icon');
+    const quickNotesPanel = document.querySelector('.quick-notes-panel');
+    const quickNotesTextarea = quickNotesPanel ? quickNotesPanel.querySelector('textarea') : null;
+    const quickNotesFontButtons = quickNotesPanel ? quickNotesPanel.querySelectorAll('.font-size-btn') : [];
+    
     // AI Tools
     const aiLinksContainer = document.querySelector('.ai-links-vertical');
     const addToolButton = document.querySelector('.add-tool-button');
@@ -30,6 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveEditToolButton = document.getElementById('save-edit-tool');
     const aiToolsPanel = document.querySelector('.ai-tools-panel');
     const aiToolsToggle = document.querySelector('.ai-tools-toggle');
+    
+    const storageSync = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync)
+        ? chrome.storage.sync
+        : {
+              get: (keys, callback) => callback({}),
+              set: (data, callback) => callback && callback()
+          };
     
     // Meditation
     const taskManagerView = document.querySelector('.task-manager-view');
@@ -65,6 +107,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const VOLUME_INCREMENT = 0.1;
     const MAX_AI_TOOLS = 10;
     let editingToolIndex = -1;
+    const DEFAULT_SETTINGS = { fontSize: 'small', zenCursor: false, keepQuickLinksVisible: false };
+    let userSettings = { ...DEFAULT_SETTINGS };
+    const FOCUSABLE_SELECTORS = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    let activeFocusTrap = null;
+    let previouslyFocusedElement = null;
+
+    const STATS_HISTORY_LIMIT = 400;
+    let productivityStats = createDefaultStats();
+    let currentStatsPeriod = 'all';
+    let statsRenderCache = { period: null, summary: null };
+
+    const STATS_PERIOD_CONFIG = {
+        all: { label: 'All Time', days: null },
+        daily: { label: 'Daily', days: 1 },
+        weekly: { label: 'Weekly', days: 7 },
+        monthly: { label: 'Monthly', days: 30 },
+        yearly: { label: 'Yearly', days: 365 }
+    };
+    const HISTORY_TABLE_LIMIT = 60;
+
+    let meditationSessionStart = null;
+    let meditationSessionElapsedSeconds = 0;
+    let meditationPreparationTimeout = null;
 
     // NEW FEATURES
     let ENABLE_NEW_FEATURES = true;
@@ -80,8 +145,622 @@ document.addEventListener('DOMContentLoaded', () => {
     let circleY = 0;
     let isMouseActive = false;
     let cursorAnimationId = null;
+    let isCursorAnimationActive = false;
+    let cursorEventsBound = false;
     const CURSOR_LERP_FACTOR = 0.15; // Smooth easing factor for circle
     const DOT_LERP_FACTOR = 0.8; // Slight delay for dot (higher = faster)
+
+    function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+    }
+
+    function deactivateFocusTrap() {
+        if (!activeFocusTrap) return;
+        const { container, handler } = activeFocusTrap;
+        container.removeEventListener('keydown', handler);
+        activeFocusTrap = null;
+    }
+
+    function activateFocusTrap(container) {
+        if (!container) return;
+        const focusable = Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter(
+            (el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true'
+        );
+        if (!focusable.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        deactivateFocusTrap();
+
+        const handleKeydown = (event) => {
+            if (event.key !== 'Tab') return;
+
+            if (event.shiftKey) {
+                if (document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                }
+            } else if (document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        container.addEventListener('keydown', handleKeydown);
+        activeFocusTrap = { container, handler: handleKeydown };
+
+        setTimeout(() => first.focus(), 0);
+    }
+
+    function persistSettings(changes, callback) {
+        userSettings = { ...userSettings, ...changes };
+        storageSync.set({ userSettings }, () => {
+            if (typeof callback === 'function') callback();
+        });
+    }
+
+    function applyFontSizePreference(size, persist = true) {
+        const normalized = ['small', 'medium', 'large'].includes(size) ? size : DEFAULT_SETTINGS.fontSize;
+        userSettings.fontSize = normalized;
+
+        bodyElement.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
+        bodyElement.classList.add(`font-size-${normalized}`);
+
+        if (fontSizeSelect) {
+            fontSizeSelect.value = normalized;
+        }
+
+        if (persist) {
+            persistSettings({ fontSize: normalized });
+        }
+    }
+
+    function applyZenCursor(enabled, persist = true) {
+        let shouldEnable = Boolean(enabled);
+
+        if (zenCursorToggle) {
+            zenCursorToggle.checked = shouldEnable;
+        }
+
+        if (shouldEnable) {
+            const initialized = initializeCursorFollower();
+            if (!initialized) {
+                shouldEnable = false;
+                if (zenCursorToggle) {
+                    zenCursorToggle.checked = false;
+                }
+            }
+        }
+
+        bodyElement.classList.toggle('zen-cursor-enabled', shouldEnable);
+
+        if (shouldEnable) {
+            bindCursorEvents();
+            isMouseActive = true;
+            bodyElement.classList.add('cursor-active');
+            startCursorAnimation();
+        } else {
+            stopCursorAnimation();
+            unbindCursorEvents();
+            isMouseActive = false;
+            bodyElement.classList.remove('cursor-active');
+        }
+
+        userSettings.zenCursor = shouldEnable;
+
+        if (persist) {
+            persistSettings({ zenCursor: shouldEnable });
+        }
+    }
+
+    function updateAiToolsToggleState() {
+        if (!aiToolsToggle) return;
+        const expanded = aiToolsPanel ? aiToolsPanel.classList.contains('visible') : false;
+        aiToolsToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
+
+    function applyQuickLinksPinned(enabled, persist = true) {
+        const isPinned = Boolean(enabled);
+        userSettings.keepQuickLinksVisible = isPinned;
+
+        if (quickLinksToggle) {
+            quickLinksToggle.checked = isPinned;
+        }
+
+        if (aiToolsPanel && aiToolsToggle) {
+            if (isPinned) {
+                aiToolsPanel.classList.add('visible');
+                aiToolsToggle.classList.add('active');
+                aiToolsToggle.classList.add('pinned');
+                aiToolsToggle.setAttribute('aria-disabled', 'true');
+                aiToolsToggle.setAttribute('tabindex', '-1');
+                aiToolsToggle.title = 'Quick Links are pinned in Settings';
+            } else {
+                aiToolsToggle.classList.remove('pinned');
+                aiToolsToggle.setAttribute('aria-disabled', 'false');
+                aiToolsToggle.setAttribute('tabindex', '0');
+                aiToolsToggle.title = 'Show/Hide AI Tools';
+            }
+            updateAiToolsToggleState();
+        }
+
+        if (persist) {
+            persistSettings({ keepQuickLinksVisible: isPinned });
+        }
+    }
+
+    function applySettings(settings, persist = false) {
+        const nextSettings = { ...DEFAULT_SETTINGS, ...settings };
+        userSettings = nextSettings;
+
+        applyFontSizePreference(nextSettings.fontSize, false);
+        applyZenCursor(nextSettings.zenCursor, false);
+        applyQuickLinksPinned(nextSettings.keepQuickLinksVisible, false);
+
+        if (persist) {
+            persistSettings({}, null);
+        }
+    }
+
+    function createDefaultStats() {
+        return {
+            version: 1,
+            meditation: {
+                totalDurationSeconds: 0,
+                sessionCount: 0,
+                modeCounts: {},
+                history: []
+            },
+            tasks: {
+                completed: 0,
+                closed: 0,
+                history: []
+            }
+        };
+    }
+
+    function hydrateStats(rawStats) {
+        const defaults = createDefaultStats();
+        if (!rawStats || typeof rawStats !== 'object') {
+            return defaults;
+        }
+
+        const hydrated = { ...defaults };
+        hydrated.version = Number.isFinite(rawStats.version) ? rawStats.version : defaults.version;
+
+        const meditation = rawStats.meditation || {};
+        hydrated.meditation.totalDurationSeconds = Number.isFinite(meditation.totalDurationSeconds)
+            ? meditation.totalDurationSeconds
+            : defaults.meditation.totalDurationSeconds;
+        hydrated.meditation.sessionCount = Number.isFinite(meditation.sessionCount)
+            ? meditation.sessionCount
+            : defaults.meditation.sessionCount;
+        hydrated.meditation.modeCounts = typeof meditation.modeCounts === 'object' && meditation.modeCounts
+            ? { ...meditation.modeCounts }
+            : { ...defaults.meditation.modeCounts };
+        hydrated.meditation.history = Array.isArray(meditation.history)
+            ? [...meditation.history].slice(0, STATS_HISTORY_LIMIT)
+            : [...defaults.meditation.history];
+
+        const tasks = rawStats.tasks || {};
+        hydrated.tasks.completed = Number.isFinite(tasks.completed) ? tasks.completed : defaults.tasks.completed;
+        hydrated.tasks.closed = Number.isFinite(tasks.closed) ? tasks.closed : defaults.tasks.closed;
+        hydrated.tasks.history = Array.isArray(tasks.history)
+            ? [...tasks.history].slice(0, STATS_HISTORY_LIMIT)
+            : [...defaults.tasks.history];
+
+        return hydrated;
+    }
+
+    function persistStats() {
+        storageSync.set({ productivityStats }, () => {});
+    }
+
+    function invalidateStatsCache() {
+        statsRenderCache.period = null;
+        statsRenderCache.summary = null;
+    }
+
+    function pushHistoryEntry(history, entry) {
+        history.unshift(entry);
+        if (history.length > STATS_HISTORY_LIMIT) {
+            history.length = STATS_HISTORY_LIMIT;
+        }
+    }
+
+    function recordMeditationSession(durationSeconds, modeName, metadata = {}) {
+        const duration = Number(durationSeconds);
+        if (!Number.isFinite(duration) || duration <= 0) {
+            return;
+        }
+
+        const modeKey = modeName || 'Unknown';
+        const meditationStats = productivityStats.meditation;
+        meditationStats.totalDurationSeconds += duration;
+        meditationStats.sessionCount += 1;
+        meditationStats.modeCounts[modeKey] = (meditationStats.modeCounts[modeKey] || 0) + 1;
+
+        const { timestamp: metadataTimestamp, ...restMetadata } = metadata || {};
+        const timestamp = Number(metadataTimestamp) || Date.now();
+
+        pushHistoryEntry(meditationStats.history, {
+            id: cryptoRandomId(),
+            type: 'meditation',
+            timestamp,
+            durationSeconds: duration,
+            mode: modeKey,
+            ...restMetadata
+        });
+
+        invalidateStatsCache();
+        persistStats();
+        renderStatsSummary();
+        if (statsOverlay && statsOverlay.classList.contains('active')) {
+            renderStatsOverlay(true);
+        }
+    }
+
+    function formatDuration(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            return '0m';
+        }
+        const totalMinutes = Math.floor(seconds / 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${minutes}m`;
+    }
+
+    function formatTrend(current, previous, type = 'count') {
+        const prev = Number.isFinite(previous) ? previous : 0;
+        const diff = current - prev;
+        if (type === 'time') {
+            if (Math.abs(diff) < 60) {
+                return '—';
+            }
+            return `${diff > 0 ? '↑' : '↓'} ${formatDuration(Math.abs(diff))}`;
+        }
+        if (Math.abs(diff) < 1) {
+            return '—';
+        }
+        return `${diff > 0 ? '↑' : '↓'} ${Math.abs(diff)}`;
+    }
+
+    function getPeriodStartTimestamp(periodKey) {
+        const config = STATS_PERIOD_CONFIG[periodKey] || STATS_PERIOD_CONFIG.all;
+        if (!config.days) {
+            return null;
+        }
+        return Date.now() - config.days * 24 * 60 * 60 * 1000;
+    }
+
+    function getStartOfDayTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime();
+    }
+
+    function formatDateLabel(timestamp) {
+        return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function aggregateHistoryBuckets(meditationHistory, taskHistory) {
+        const buckets = new Map();
+
+        const ensureBucket = (timestamp) => {
+            const dayStart = getStartOfDayTimestamp(timestamp || Date.now());
+            let bucket = buckets.get(dayStart);
+            if (!bucket) {
+                bucket = {
+                    timestamp: dayStart,
+                    label: formatDateLabel(dayStart),
+                    meditationSeconds: 0,
+                    tasksCompleted: 0,
+                    tasksClosed: 0
+                };
+                buckets.set(dayStart, bucket);
+            }
+            return bucket;
+        };
+
+        meditationHistory.forEach((entry) => {
+            const bucket = ensureBucket(entry.timestamp);
+            bucket.meditationSeconds += entry.durationSeconds || 0;
+        });
+
+        taskHistory.forEach((entry) => {
+            const bucket = ensureBucket(entry.timestamp);
+            if (entry.action === 'completed') {
+                bucket.tasksCompleted += 1;
+            } else if (entry.action === 'closed') {
+                bucket.tasksClosed += 1;
+            }
+        });
+
+        return Array.from(buckets.values())
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, HISTORY_TABLE_LIMIT);
+    }
+
+    function buildStatsSnapshot(periodKey) {
+        const startTimestamp = getPeriodStartTimestamp(periodKey);
+        const periodConfig = STATS_PERIOD_CONFIG[periodKey] || STATS_PERIOD_CONFIG.all;
+        const periodDurationMs = periodConfig.days ? periodConfig.days * 24 * 60 * 60 * 1000 : null;
+
+        const meditationHistory = startTimestamp
+            ? productivityStats.meditation.history.filter((entry) => entry.timestamp >= startTimestamp)
+            : [...productivityStats.meditation.history];
+
+        const taskHistory = startTimestamp
+            ? productivityStats.tasks.history.filter((entry) => entry.timestamp >= startTimestamp)
+            : [...productivityStats.tasks.history];
+
+        const meditationTotalSeconds = meditationHistory.reduce(
+            (sum, entry) => sum + (entry.durationSeconds || 0),
+            0
+        );
+        const meditationSessions = meditationHistory.length;
+        const meditationAverageSeconds = meditationSessions
+            ? Math.round(meditationTotalSeconds / meditationSessions)
+            : 0;
+
+        let favoriteMode = '—';
+        if (meditationHistory.length) {
+            const modeCounts = meditationHistory.reduce((acc, entry) => {
+                if (entry.mode) {
+                    acc[entry.mode] = (acc[entry.mode] || 0) + 1;
+                }
+                return acc;
+            }, {});
+            const sortedModes = Object.entries(modeCounts).sort((a, b) => b[1] - a[1]);
+            if (sortedModes.length) {
+                favoriteMode = sortedModes[0][0];
+            }
+        }
+
+        const tasksCompleted = taskHistory.filter((entry) => entry.action === 'completed').length;
+        const tasksClosed = taskHistory.filter((entry) => entry.action === 'closed').length;
+        const completionRate =
+            tasksCompleted + tasksClosed > 0
+                ? Math.round((tasksCompleted / (tasksCompleted + tasksClosed)) * 100)
+                : null;
+
+        let previousMeditationTotal = 0;
+        let previousTasksCompleted = 0;
+        if (periodDurationMs) {
+            const previousStart = startTimestamp - periodDurationMs;
+            const previousMeditation = productivityStats.meditation.history.filter(
+                (entry) => entry.timestamp >= previousStart && entry.timestamp < startTimestamp
+            );
+            const previousTasks = productivityStats.tasks.history.filter(
+                (entry) => entry.timestamp >= previousStart && entry.timestamp < startTimestamp
+            );
+            previousMeditationTotal = previousMeditation.reduce(
+                (sum, entry) => sum + (entry.durationSeconds || 0),
+                0
+            );
+            previousTasksCompleted = previousTasks.filter((entry) => entry.action === 'completed').length;
+        }
+
+        const historyBuckets = aggregateHistoryBuckets(meditationHistory, taskHistory);
+        const productiveEntry = historyBuckets.reduce((best, entry) => {
+            if (!best || entry.tasksCompleted > best.tasksCompleted) {
+                return entry;
+            }
+            return best;
+        }, null);
+
+        return {
+            meditationTotalSeconds,
+            meditationSessions,
+            meditationAverageSeconds,
+            favoriteMode,
+            tasksCompleted,
+            tasksClosed,
+            completionRate,
+            meditationTrendText: periodDurationMs ? formatTrend(meditationTotalSeconds, previousMeditationTotal, 'time') : '—',
+            tasksTrendText: periodDurationMs ? formatTrend(tasksCompleted, previousTasksCompleted, 'count') : '—',
+            historyBuckets,
+            mostProductiveDayLabel: productiveEntry ? productiveEntry.label : '—'
+        };
+    }
+
+    function renderStatsSummary() {
+        if (!settingsStatMeditationTime || !settingsStatMeditationSessions || !settingsStatTasksCompleted || !settingsStatTasksClosed) {
+            return;
+        }
+
+        settingsStatMeditationTime.textContent = formatDuration(productivityStats.meditation.totalDurationSeconds);
+        settingsStatMeditationSessions.textContent = productivityStats.meditation.sessionCount;
+        settingsStatTasksCompleted.textContent = productivityStats.tasks.completed;
+        settingsStatTasksClosed.textContent = productivityStats.tasks.closed;
+
+        statsRenderCache.summary = {
+            meditationTotalSeconds: productivityStats.meditation.totalDurationSeconds,
+            meditationSessions: productivityStats.meditation.sessionCount,
+            tasksCompleted: productivityStats.tasks.completed,
+            tasksClosed: productivityStats.tasks.closed
+        };
+    }
+
+    function updateStatsPeriodButtons() {
+        if (!statsPeriodButtons || !statsPeriodButtons.length) {
+            return;
+        }
+
+        statsPeriodButtons.forEach((button) => {
+            const period = button.dataset.period || 'all';
+            const isActive = period === currentStatsPeriod;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    }
+
+    function setStatsPeriod(period, persist = true) {
+        const normalized = STATS_PERIOD_CONFIG[period] ? period : 'all';
+        if (currentStatsPeriod === normalized) {
+            if (persist) {
+                storageSync.set({ selectedStatsPeriod: currentStatsPeriod }, () => {});
+            }
+            return;
+        }
+
+        currentStatsPeriod = normalized;
+        updateStatsPeriodButtons();
+        renderStatsOverlay(true);
+
+        if (persist) {
+            storageSync.set({ selectedStatsPeriod: currentStatsPeriod }, () => {});
+        }
+    }
+
+    function renderStatsOverlay(force = false) {
+        if (!statsMeditationTotal || !statsMeditationAverage || !statsMeditationFavorite || !statsMeditationSessions) {
+            return;
+        }
+
+        if (!force && statsRenderCache.period === currentStatsPeriod) {
+            return;
+        }
+
+        const snapshot = buildStatsSnapshot(currentStatsPeriod);
+        statsRenderCache.period = currentStatsPeriod;
+
+        statsMeditationTotal.textContent = formatDuration(snapshot.meditationTotalSeconds);
+        statsMeditationAverage.textContent = formatDuration(snapshot.meditationAverageSeconds);
+        statsMeditationFavorite.textContent = snapshot.favoriteMode || '—';
+        statsMeditationSessions.textContent = snapshot.meditationSessions;
+        statsMeditationTrend.textContent = snapshot.meditationTrendText || '—';
+
+        statsTasksCompleted.textContent = snapshot.tasksCompleted;
+        statsTasksCompletionRate.textContent = snapshot.completionRate !== null ? `${snapshot.completionRate}%` : '—';
+        statsTasksClosed.textContent = snapshot.tasksClosed;
+        statsTasksProductiveDay.textContent = snapshot.mostProductiveDayLabel || '—';
+        statsTasksTrend.textContent = snapshot.tasksTrendText || '—';
+
+        if (statsHistoryContainer) {
+            statsHistoryContainer.innerHTML = '';
+            if (!snapshot.historyBuckets.length) {
+                const emptyRow = document.createElement('p');
+                emptyRow.className = 'stats-empty';
+                emptyRow.textContent = 'Start meditating and completing tasks to see your history here.';
+                statsHistoryContainer.appendChild(emptyRow);
+            } else {
+                snapshot.historyBuckets.forEach((entry) => {
+                    const row = document.createElement('div');
+                    row.className = 'stats-history-row';
+                    row.innerHTML = `
+                        <span>${entry.label}</span>
+                        <span>${entry.meditationSeconds ? formatDuration(entry.meditationSeconds) : '—'}</span>
+                        <span>${entry.tasksCompleted || 0}</span>
+                        <span>${entry.tasksClosed || 0}</span>
+                    `;
+                    statsHistoryContainer.appendChild(row);
+                });
+            }
+        }
+    }
+
+    function triggerTaskCompletionAnimation(taskListElement, index) {
+        if (!taskListElement) {
+            return;
+        }
+        const item = taskListElement.children[index];
+        if (!item) {
+            return;
+        }
+        item.classList.add('completion-anim');
+        setTimeout(() => item.classList.remove('completion-anim'), 900);
+    }
+
+    function recordTaskEvent({ action, listId, task, timestamp = Date.now() }) {
+        if (!action || !timestamp) return;
+
+        const tasksStats = productivityStats.tasks;
+        if (action === 'completed') {
+            tasksStats.completed += 1;
+        } else if (action === 'closed') {
+            tasksStats.closed += 1;
+        } else {
+            return;
+        }
+
+        pushHistoryEntry(tasksStats.history, {
+            id: cryptoRandomId(),
+            type: 'task',
+            action,
+            listId: listId || null,
+            timestamp,
+            text: task && task.text ? task.text : undefined
+        });
+
+        invalidateStatsCache();
+        persistStats();
+        renderStatsSummary();
+        if (statsOverlay && statsOverlay.classList.contains('active')) {
+            renderStatsOverlay(true);
+        }
+    }
+
+    function cryptoRandomId() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function handleOverlayBackdropClick(event, overlayElement, closeFn) {
+        if (!overlayElement || typeof closeFn !== 'function') return;
+        const backdrop = overlayElement.querySelector('.settings-backdrop, .stats-backdrop');
+        if (event.target === overlayElement || (backdrop && event.target === backdrop)) {
+            closeFn();
+        }
+    }
+
+    function openSettingsOverlay() {
+        if (!settingsOverlay) return;
+        previouslyFocusedElement = document.activeElement || settingsToggleButton;
+        settingsOverlay.classList.add('active');
+        settingsOverlay.setAttribute('aria-hidden', 'false');
+        activateFocusTrap(settingsPanel);
+    }
+
+    function closeSettingsOverlay(restoreFocus = true) {
+        if (!settingsOverlay) return;
+        settingsOverlay.classList.remove('active');
+        settingsOverlay.setAttribute('aria-hidden', 'true');
+        deactivateFocusTrap();
+        if (restoreFocus && previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+            previouslyFocusedElement.focus();
+        }
+        previouslyFocusedElement = null;
+    }
+
+    function openStatsOverlay() {
+        if (!statsOverlay) return;
+        previouslyFocusedElement = document.activeElement || viewStatsButton;
+        if (settingsOverlay && settingsOverlay.classList.contains('active')) {
+            closeSettingsOverlay(false);
+        }
+        statsOverlay.classList.add('active');
+        statsOverlay.setAttribute('aria-hidden', 'false');
+        activateFocusTrap(statsPanel);
+        renderStatsOverlay(true);
+    }
+
+    function closeStatsOverlay(restoreFocus = true) {
+        if (!statsOverlay) return;
+        statsOverlay.classList.remove('active');
+        statsOverlay.setAttribute('aria-hidden', 'true');
+        deactivateFocusTrap();
+        if (restoreFocus && previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+            previouslyFocusedElement.focus();
+        }
+        previouslyFocusedElement = null;
+    }
 
     // --- Initialization ---
     function initializeApp() {
@@ -92,15 +771,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Data Management & Core UI ---
     function loadData() {
-        // Fallback for when running outside Chrome extension context
-        const storageAPI = (typeof chrome !== 'undefined' && chrome.storage) ? chrome.storage.sync : {
-            get: (keys, callback) => callback({}),
-            set: (data, callback) => callback && callback()
-        };
-        
-        storageAPI.get([
-            'todayTasks', 'weeklyTasks', 'aiTools', 'isDarkMode', 'listData',
-            'meditationDuration', 'currentMeditationModeName', 'isMuted', 'meditationVolume', 'quickNotes', 'notesFontSize'
+    storageSync.get([
+            'todayTasks',
+            'weeklyTasks',
+            'aiTools',
+            'isDarkMode',
+            'listData',
+            'meditationDuration',
+            'currentMeditationModeName',
+            'isMuted',
+            'meditationVolume',
+            'quickNotes',
+            'notesFontSize',
+            'productivityStats',
+            'userSettings',
+            'selectedStatsPeriod'
         ], (result) => {
             // Dark Mode
             const isDarkMode = result.isDarkMode || false;
@@ -122,12 +807,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // AI Tools
             let aiTools = result.aiTools;
             if (!aiTools) {
+                // Set default quick links for new users only
                 aiTools = [
                     { label: 'ChatGPT', url: 'https://chat.openai.com/', color: '#094637' },
-                    { label: 'Claude', url: 'https://claude.ai/', color: '#945104' },
-                    { label: 'Gemini', url: 'https://gemini.google.com/', color: '#4f46e5' }
+                    { label: 'Gemini', url: 'https://gemini.google.com/app', color: '#4f46e5' },
+                    { label: 'Claude AI', url: 'https://claude.ai/', color: '#945104' },
+                    { label: 'Perplexity AI', url: 'https://www.perplexity.ai/', color: '#7C3AED' },
+                    { label: 'GitHub', url: 'https://github.com/', color: '#333' },
+                    { label: 'OpenRouter.ai', url: 'https://openrouter.ai/', color: '#FF6B35' },
+                    { label: 'Reddit', url: 'https://www.reddit.com/', color: '#FF4500' },
+                    { label: 'YouTube', url: 'https://www.youtube.com/', color: '#FF0000' }
                 ];
-                storageAPI.set({ aiTools }, () => {});
+                storageSync.set({ aiTools }, () => {});
             }
             renderAITools(aiTools);
 
@@ -156,15 +847,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 quickNotesTextarea.value = quickNotes;
                 quickNotesTextarea.style.fontSize = notesFontSize + 'px';
             }
+
+            const savedSettings = result.userSettings || DEFAULT_SETTINGS;
+            applySettings(savedSettings, false);
+
+            productivityStats = hydrateStats(result.productivityStats);
+            if (!result.productivityStats) {
+                persistStats();
+            }
+            renderStatsSummary();
+            updateStatsPeriodButtons();
+            if (statsOverlay && statsOverlay.classList.contains('active')) {
+                renderStatsOverlay(true);
+            }
         });
     }
 
     function applyTheme(theme, isDarkMode) {
-        bodyElement.className = ''; // Clear all classes
+        bodyElement.classList.remove('dark-mode');
+        Array.from(bodyElement.classList)
+            .filter((cls) => cls.startsWith('theme-'))
+            .forEach((cls) => bodyElement.classList.remove(cls));
+
         if (isDarkMode) {
             bodyElement.classList.add('dark-mode');
         }
-        // This logic ensures the correct combined class is applied e.g., "dark-mode theme-serene-dark"
         bodyElement.classList.add(`${theme}-${isDarkMode ? 'dark' : 'light'}`);
     }
 
@@ -176,18 +883,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showToast(message) {
-        const toastContainer = document.getElementById('toast-container');
+    function showToast(message, options = {}) {
         if (!toastContainer) return;
         const toast = document.createElement('div');
         toast.className = 'toast';
+        if (options.type) {
+            toast.classList.add(`${options.type}-toast`);
+        }
         toast.textContent = message;
         toastContainer.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 100);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        const duration = options.duration || 3000;
         setTimeout(() => {
             toast.classList.remove('show');
-            toast.addEventListener('transitionend', () => toast.remove());
-        }, 3000);
+            toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        }, duration);
     }
 
     function showMeditationNotification(title, message) {
@@ -267,6 +977,89 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function startTaskInlineEdit(listItem, taskType, taskListElement) {
+        if (listItem.classList.contains('editing')) return;
+        const taskTextElement = listItem.querySelector('.task-text');
+        if (!taskTextElement) return;
+
+        const storageKey = `${taskType}Tasks`;
+        const originalText = taskTextElement.textContent;
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'task-edit-input';
+        textarea.value = originalText;
+
+        const autoResize = () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        };
+
+        const restoreSpan = (value) => {
+            const span = document.createElement('span');
+            span.className = 'task-text';
+            span.textContent = value;
+            textarea.replaceWith(span);
+        };
+
+        const exitEditMode = () => {
+            listItem.classList.remove('editing');
+            listItem.setAttribute('draggable', true);
+            textarea.removeEventListener('blur', handleBlur);
+            textarea.removeEventListener('keydown', handleKeyDown);
+        };
+
+        const commitChanges = (shouldSave) => {
+            exitEditMode();
+            const newValue = textarea.value.trim();
+
+            if (!shouldSave || newValue === originalText) {
+                restoreSpan(originalText);
+                return;
+            }
+
+            if (!newValue.length) {
+                showToast('Task cannot be empty.');
+                restoreSpan(originalText);
+                return;
+            }
+
+            storageSync.get([storageKey], (result) => {
+                const tasks = result[storageKey] || [];
+                const index = parseInt(listItem.dataset.index, 10);
+                if (Number.isNaN(index) || !tasks[index]) {
+                    restoreSpan(originalText);
+                    return;
+                }
+                tasks[index].text = newValue;
+                storageSync.set({ [storageKey]: tasks }, () => {
+                    renderTasks(tasks, taskListElement, taskType);
+                });
+            });
+        };
+
+        const handleBlur = () => commitChanges(true);
+        const handleKeyDown = (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                commitChanges(true);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                commitChanges(false);
+            }
+        };
+
+        listItem.classList.add('editing');
+        listItem.setAttribute('draggable', false);
+        taskTextElement.replaceWith(textarea);
+        textarea.focus();
+        textarea.select();
+        autoResize();
+
+        textarea.addEventListener('blur', handleBlur);
+        textarea.addEventListener('keydown', handleKeyDown);
+        textarea.addEventListener('input', autoResize);
+    }
+
     function addTask(taskText, taskType, taskListElement) {
         if (taskText.trim() === '') return;
         const storageKey = `${taskType}Tasks`;
@@ -285,9 +1078,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target;
         const listItem = target.closest('li');
         if (!listItem) return;
+
+        if (target.classList.contains('task-text')) {
+            startTaskInlineEdit(listItem, taskType, taskListElement);
+            return;
+        }
         
         // Use the stored data-index for accuracy, not DOM position
-        const index = parseInt(listItem.dataset.index);
+        const index = parseInt(listItem.dataset.index, 10);
         const storageKey = `${taskType}Tasks`;
 
         chrome.storage.sync.get(storageKey, (result) => {
@@ -295,9 +1093,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index < 0 || index >= tasks.length) return;
 
             let actionTaken = false;
+            let completedTaskForStats = null;
+            let closedTaskForStats = null;
+
             if (target.type === 'checkbox') {
-                tasks[index].completed = target.checked;
-                if (tasks[index].completed) tasks[index].starred = false;
+                const task = tasks[index];
+                const wasCompleted = task.completed;
+                task.completed = target.checked;
+                if (task.completed) {
+                    task.starred = false;
+                    if (!wasCompleted) {
+                        completedTaskForStats = { ...task };
+                        showToast('Task completed!', { type: 'completion' });
+                    }
+                }
                 actionTaken = true;
             } else if (target.classList.contains('fa-star')) {
                 if (!tasks[index].completed) {
@@ -305,7 +1114,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionTaken = true;
                 }
             } else if (target.classList.contains('remove-task')) {
-                tasks.splice(index, 1);
+                const [removedTask] = tasks.splice(index, 1);
+                if (removedTask) {
+                    closedTaskForStats = removedTask;
+                }
                 showToast("Task removed.");
                 actionTaken = true;
             }
@@ -314,6 +1126,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 chrome.storage.sync.set({ [storageKey]: tasks }, () => {
                     renderTasks(tasks, taskListElement, taskType);
                     if (taskType === 'today') updateBadgeText(tasks);
+
+                    if (completedTaskForStats) {
+                        recordTaskEvent({
+                            action: 'completed',
+                            listId: taskType,
+                            task: completedTaskForStats,
+                            timestamp: Date.now()
+                        });
+                    }
+
+                    if (closedTaskForStats) {
+                        recordTaskEvent({
+                            action: 'closed',
+                            listId: taskType,
+                            task: closedTaskForStats,
+                            timestamp: Date.now()
+                        });
+                    }
                 });
             }
         });
@@ -408,14 +1238,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Meditation Functions ---
     function startMeditationTimer() {
-        clearInterval(meditationTimerInterval);
+        if (meditationTimerInterval) {
+            clearInterval(meditationTimerInterval);
+        }
         meditationTimerInterval = setInterval(() => {
-            timeRemaining--;
+            timeRemaining = Math.max(0, timeRemaining - 1);
             updateMeditationTimerDisplay();
             if (timeRemaining <= 5 && !meditationAudio.muted) {
-                meditationAudio.volume = currentVolume * (Math.max(0, timeRemaining) / 5);
+                meditationAudio.volume = currentVolume * (timeRemaining / 5);
             }
-            if (timeRemaining <= 0) { endMeditation(); }
+            if (timeRemaining <= 0) {
+                endMeditation();
+            }
         }, 1000);
     }
     function updateMeditationTimerDisplay() {
@@ -455,32 +1289,64 @@ document.addEventListener('DOMContentLoaded', () => {
         meditationTimerElement.style.display = 'block';
         prepareMessageElement.style.opacity = 1;
         prepareMessageElement.classList.add('fade-out');
+        meditationSessionStart = null;
+        meditationSessionElapsedSeconds = 0;
 
-        // Show start notification
-        showMeditationNotification('Meditation Session Started', `Beginning ${Math.floor(meditationDuration / 60)}-minute ${currentMeditationMode.name} meditation. Find your center.`);
+        if (meditationPreparationTimeout) {
+            clearTimeout(meditationPreparationTimeout);
+            meditationPreparationTimeout = null;
+        }
 
-        setTimeout(() => {
+        // Removed meditation start notification
+
+        meditationPreparationTimeout = setTimeout(() => {
             prepareMessageElement.style.opacity = 0;
             prepareMessageElement.classList.remove('fade-out');
-            startMeditationTimer();
             breathingBubble.style.animationPlayState = 'running';
+            meditationSessionStart = Date.now();
             meditationAudio.volume = currentVolume;
             if (!isMuted) {
                 meditationAudio.play().catch(e => console.error("Error playing audio:", e));
             }
+            startMeditationTimer();
+            meditationPreparationTimeout = null;
         }, 5000);
     }
     function endMeditation() {
-        clearInterval(meditationTimerInterval);
+        if (meditationTimerInterval) {
+            clearInterval(meditationTimerInterval);
+            meditationTimerInterval = null;
+        }
+        if (meditationPreparationTimeout) {
+            clearTimeout(meditationPreparationTimeout);
+            meditationPreparationTimeout = null;
+        }
+
         breathingBubble.style.animationPlayState = 'paused';
         isMeditationActive = false;
+
         meditationAudio.pause();
         meditationAudio.currentTime = 0;
         meditationAudio.volume = currentVolume;
+        stopRainAnimation();
 
-        // Show end notification
-        const sessionDuration = Math.floor((meditationDuration - timeRemaining) / 60);
-        showMeditationNotification('Meditation Session Complete', `Well done! You completed a ${sessionDuration}-minute ${currentMeditationMode.name} session. Take a moment to breathe.`);
+        timeRemaining = Math.max(0, timeRemaining);
+
+        let elapsedSeconds = 0;
+        if (meditationSessionStart) {
+            elapsedSeconds = Math.max(0, Math.floor((Date.now() - meditationSessionStart) / 1000));
+        } else {
+            elapsedSeconds = Math.max(0, meditationDuration - timeRemaining);
+        }
+        meditationSessionStart = null;
+        meditationSessionElapsedSeconds = elapsedSeconds;
+        timeRemaining = meditationDuration;
+
+        if (elapsedSeconds > 0) {
+            recordMeditationSession(elapsedSeconds, currentMeditationMode.name);
+        }
+
+        // Removed meditation session complete notification
 
         meditationView.classList.remove('active');
         setTimeout(() => {
@@ -703,29 +1569,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Cursor Follower Functions ---
     function initializeCursorFollower() {
-        cursorDot = document.querySelector('.cursor-dot');
-        cursorCircle = document.querySelector('.cursor-circle');
-        
-        if (!cursorDot || !cursorCircle) return;
-        
-        // Initialize positions
+        if (!cursorDot || !cursorCircle) {
+            cursorDot = document.querySelector('.cursor-dot');
+            cursorCircle = document.querySelector('.cursor-circle');
+        }
+
+        if (!cursorDot || !cursorCircle) {
+            return false;
+        }
+
         dotX = dotY = circleX = circleY = window.innerWidth / 2;
-        
-        // Start animation loop
-        animateCursor();
+        mouseX = dotX;
+        mouseY = dotY;
+
+        cursorDot.style.transform = `translate3d(${dotX - 1.5}px, ${dotY - 1.5}px, 0)`;
+        cursorCircle.style.transform = `translate3d(${circleX - 12}px, ${circleY - 12}px, 0)`;
+
+        return true;
+    }
+
+    function bindCursorEvents() {
+        if (cursorEventsBound) {
+            return;
+        }
+        document.addEventListener('mousemove', updateCursorPosition);
+        document.addEventListener('mouseenter', showCursor);
+        document.addEventListener('mouseleave', hideCursor);
+        cursorEventsBound = true;
+    }
+
+    function unbindCursorEvents() {
+        if (!cursorEventsBound) {
+            return;
+        }
+        document.removeEventListener('mousemove', updateCursorPosition);
+        document.removeEventListener('mouseenter', showCursor);
+        document.removeEventListener('mouseleave', hideCursor);
+        cursorEventsBound = false;
     }
     
     function updateCursorPosition(event) {
+        if (!userSettings.zenCursor) {
+            return;
+        }
+
         mouseX = event.clientX;
         mouseY = event.clientY;
-        
-        // Show cursor elements
+
         if (!isMouseActive) {
             isMouseActive = true;
             bodyElement.classList.add('cursor-active');
         }
     }
     
+    function startCursorAnimation() {
+        if (isCursorAnimationActive) {
+            return;
+        }
+
+        if (!cursorDot || !cursorCircle) {
+            const initialized = initializeCursorFollower();
+            if (!initialized) {
+                return;
+            }
+        }
+
+        isCursorAnimationActive = true;
+        cursorAnimationId = requestAnimationFrame(animateCursor);
+    }
+
+    function stopCursorAnimation() {
+        if (!isCursorAnimationActive) {
+            return;
+        }
+
+        isCursorAnimationActive = false;
+
+        if (cursorAnimationId !== null) {
+            cancelAnimationFrame(cursorAnimationId);
+            cursorAnimationId = null;
+        }
+    }
+
     function animateCursor() {
         // Smooth interpolation for dot with slight delay
         dotX += (mouseX - dotX) * DOT_LERP_FACTOR;
@@ -747,8 +1672,11 @@ document.addEventListener('DOMContentLoaded', () => {
             cursorCircle.style.transform = `translate3d(${circleX - 12}px, ${circleY - 12}px, 0)`;
         }
         
-        // Continue animation loop
-        cursorAnimationId = requestAnimationFrame(animateCursor);
+        if (isCursorAnimationActive) {
+            cursorAnimationId = requestAnimationFrame(animateCursor);
+        } else {
+            cursorAnimationId = null;
+        }
     }
     
     function hideCursor() {
@@ -757,6 +1685,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function showCursor() {
+        if (!userSettings.zenCursor) return;
+
         if (!isMouseActive) {
             isMouseActive = true;
             bodyElement.classList.add('cursor-active');
@@ -765,47 +1695,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- AI Tools Panel Functions ---
     function toggleAIToolsPanel() {
+        if (userSettings.keepQuickLinksVisible) {
+            showToast('Quick Links are pinned in Settings.');
+            return;
+        }
+
         const isVisible = aiToolsPanel.classList.contains('visible');
-        
+
         if (isVisible) {
-            // Hide panel
             aiToolsPanel.classList.remove('visible');
             aiToolsToggle.classList.remove('active');
         } else {
-            // Show panel
             aiToolsPanel.classList.add('visible');
             aiToolsToggle.classList.add('active');
         }
+
+        updateAiToolsToggleState();
     }
 
     // --- Other Utility Functions ---
     function updateDateTime() {
         const now = new Date();
         timeElement.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        dateElement.textContent = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+        const dayElement = document.querySelector('.day');
+        const dateElement = document.querySelector('.date');
+        if (dayElement) dayElement.textContent = now.toLocaleDateString([], { weekday: 'long' });
+        if (dateElement) dateElement.textContent = now.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
     function toggleQuickNotes() {
-        const quickNotesPanel = document.querySelector('.quick-notes-panel');
         if (quickNotesPanel) {
             quickNotesPanel.classList.toggle('visible');
         }
     }
 
     function saveQuickNotes() {
-        const quickNotesTextarea = document.querySelector('.quick-notes-panel textarea');
         if (quickNotesTextarea) {
-            const notes = quickNotesTextarea.value;
-            chrome.storage.sync.set({ quickNotes: notes });
+            chrome.storage.sync.set({ quickNotes: quickNotesTextarea.value });
         }
     }
 
     function adjustNotesFontSize(action) {
-        const textarea = document.querySelector('.quick-notes-panel textarea');
-        if (!textarea) return;
+        if (!quickNotesTextarea) return;
 
-        let currentSize = parseInt(window.getComputedStyle(textarea).fontSize);
-        let newSize;
+        const currentSize = parseInt(window.getComputedStyle(quickNotesTextarea).fontSize, 10);
+        let newSize = currentSize;
 
         if (action === 'increase') {
             newSize = Math.min(24, currentSize + 2);
@@ -814,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (newSize !== currentSize) {
-            textarea.style.fontSize = newSize + 'px';
+            quickNotesTextarea.style.fontSize = `${newSize}px`;
             chrome.storage.sync.set({ notesFontSize: newSize });
         }
     }
@@ -824,10 +1758,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let initialWidth, initialHeight, initialMouseX, initialMouseY;
 
     function initQuickNotesResize() {
-        const handle = document.querySelector('.quick-notes-resize-handle');
-        const panel = document.querySelector('.quick-notes-panel');
+        if (!quickNotesPanel) return;
+        const handle = quickNotesPanel.querySelector('.quick-notes-resize-handle');
+        if (!handle) return;
 
-        if (!handle || !panel) return;
+        const panel = quickNotesPanel;
 
         handle.addEventListener('mousedown', (e) => {
             isResizing = true;
@@ -908,6 +1843,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     closeModalButtons.forEach(btn => btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none'));
     window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
+
+    if (settingsToggleButton) {
+        settingsToggleButton.addEventListener('click', () => {
+            openSettingsOverlay();
+        });
+    }
+
+    if (settingsCloseButton) {
+        settingsCloseButton.addEventListener('click', () => closeSettingsOverlay());
+    }
+
+    if (settingsOverlay) {
+        settingsOverlay.addEventListener('click', (event) => handleOverlayBackdropClick(event, settingsOverlay, () => closeSettingsOverlay()));
+    }
+
+    if (viewStatsButton) {
+        viewStatsButton.addEventListener('click', () => openStatsOverlay());
+    }
+
+    if (resetStatsButton) {
+        resetStatsButton.addEventListener('click', () => {
+            productivityStats = createDefaultStats();
+            persistStats();
+            renderStatsSummary();
+            if (statsOverlay && statsOverlay.classList.contains('active')) {
+                renderStatsOverlay(true);
+            }
+            showToast('All statistics have been reset.');
+        });
+    }
+
+    if (statsCloseButton) {
+        statsCloseButton.addEventListener('click', () => {
+            closeStatsOverlay(false);
+            openSettingsOverlay();
+        });
+    }
+
+    if (statsOverlay) {
+        statsOverlay.addEventListener('click', (event) => handleOverlayBackdropClick(event, statsOverlay, () => closeStatsOverlay()));
+    }
+
+    if (statsPeriodButtons && statsPeriodButtons.length) {
+        statsPeriodButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const nextPeriod = button.dataset.period || 'all';
+                setStatsPeriod(nextPeriod);
+            });
+        });
+    }
+
+    if (fontSizeSelect) {
+        fontSizeSelect.addEventListener('change', (event) => applyFontSizePreference(event.target.value, true));
+    }
+
+    if (zenCursorToggle) {
+        zenCursorToggle.addEventListener('change', (event) => applyZenCursor(event.target.checked, true));
+    }
+
+    if (quickLinksToggle) {
+        quickLinksToggle.addEventListener('change', (event) => applyQuickLinksPinned(event.target.checked, true));
+    }
+
     meditationTriggerButton.addEventListener('click', enterMeditationModeUI);
     startStopMeditationButton.addEventListener('click', () => { if (isMeditationActive) endMeditation(); else startMeditationSession(); });
     meditationTimerElement.addEventListener('click', () => { if (!isMeditationActive) { meditationTimerElement.style.display = 'none'; meditationDurationInput.style.display = 'block'; meditationDurationInputPlus.style.display = 'none'; meditationDurationInputMinus.style.display = 'none'; meditationDurationInput.focus(); meditationDurationInput.select(); } });
@@ -917,6 +1915,16 @@ document.addEventListener('DOMContentLoaded', () => {
     meditationDurationInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { handleMeditationDurationChange(); e.target.blur(); } });
     addToolButton.addEventListener('click', () => customToolModal.style.display = 'flex');
     addCustomToolButton.addEventListener('click', addAITool);
+    [toolLabelInput, toolUrlInput].forEach((input) => {
+        if (input) {
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    addAITool();
+                }
+            });
+        }
+    });
     saveEditToolButton.addEventListener('click', editAITool);
     aiLinksContainer.addEventListener('click', (e) => {
         if(e.target.closest('.edit-tool')) {
@@ -944,11 +1952,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.addEventListener('keydown', (event) => {
-        // Escape key handling
         if (event.key === 'Escape') {
-            if (meditationView.classList.contains('active')) endMeditation();
-            if (customToolModal.style.display === 'flex') customToolModal.style.display = 'none';
-            if (editToolModal.style.display === 'flex') editToolModal.style.display = 'none';
+            if (statsOverlay && statsOverlay.classList.contains('active')) {
+                event.preventDefault();
+                closeStatsOverlay(false);
+                if (settingsOverlay) {
+                    openSettingsOverlay();
+                }
+                return;
+            }
+
+            if (settingsOverlay && settingsOverlay.classList.contains('active')) {
+                event.preventDefault();
+                closeSettingsOverlay();
+                return;
+            }
+
+            if (meditationView.classList.contains('active')) {
+                event.preventDefault();
+                endMeditation();
+                return;
+            }
+
+            if (customToolModal.style.display === 'flex') {
+                event.preventDefault();
+                customToolModal.style.display = 'none';
+                return;
+            }
+
+            if (editToolModal.style.display === 'flex') {
+                event.preventDefault();
+                editToolModal.style.display = 'none';
+                return;
+            }
+
+            if (quickNotesPanel && quickNotesPanel.classList.contains('visible')) {
+                event.preventDefault();
+                toggleQuickNotes();
+                return;
+            }
         }
 
         // Ctrl/Cmd + N: Focus on new daily task input
@@ -986,10 +2028,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('drop', handleDrop);
     document.addEventListener('dragend', handleDragEnd);
 
-    // Cursor Follower Listeners
-    document.addEventListener('mousemove', updateCursorPosition);
-    document.addEventListener('mouseenter', showCursor);
-    document.addEventListener('mouseleave', hideCursor);
+    // Cursor Follower Listeners are bound dynamically when Zen Cursor mode is enabled
     
     // AI Tools Panel Toggle Listener
     aiToolsToggle.addEventListener('click', toggleAIToolsPanel);

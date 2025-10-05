@@ -2,6 +2,14 @@
 
 A sophisticated Chrome extension that combines task management with meditation features, enhanced with a smooth cursor follower effect.
 
+## 🚀 What's New in v1.3.0
+- **Comprehensive Settings Panel**: Access font size, cursor mode, and quick links visibility controls
+- **Productivity Statistics**: Track meditation sessions, completed tasks, and completion rates
+- **Resizable Task Cards**: Dynamically adjust task card height with bottom resize handle
+- **Improved Quick Links**: All quick links remain accessible with sticky "Add Quick Link" button
+- **Zen Cursor Mode**: Smooth cursor following effect (now disabled by default)
+- **Font Size Controls**: Customize text size with small/medium/large options
+
 ## 🚀 Features
 
 ### Task Management
@@ -53,6 +61,7 @@ taskman/
 ├── README.md              # Project documentation
 ├── assets/                # Static assets
 │   ├── icons/            # Extension icons
+│   │   ├── LOGO.png
 │   │   ├── list.png
 │   │   ├── list (1).png
 │   │   ├── list (2).png
