@@ -1753,6 +1753,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Task Card Resize Functionality
+    let isTaskCardResizing = false;
+    let resizingTaskCard = null;
+    const SNAP_HEIGHTS = [300, 350, 400, 450, 500, 550, 600, 650, 700]; // Predefined snap heights
+
+    function initTaskCardResize() {
+        document.querySelectorAll('.task-card-resize-handle').forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isTaskCardResizing = true;
+                resizingTaskCard = handle.closest('.task-card');
+                const initialHeight = resizingTaskCard.offsetHeight;
+                let startY = e.clientY;
+
+                document.body.classList.add('resizing');
+                e.preventDefault();
+
+                const handleMouseMove = (e) => {
+                    if (!isTaskCardResizing || !resizingTaskCard) return;
+
+                    const deltaY = e.clientY - startY;
+                    let newHeight = initialHeight + deltaY;
+
+                    // Snap to nearest predefined height
+                    const snappedHeight = SNAP_HEIGHTS.reduce((closest, height) => {
+                        return Math.abs(height - newHeight) < Math.abs(closest - newHeight) ? height : closest;
+                    });
+
+                    if (Math.abs(snappedHeight - newHeight) <= 50) { // Within 50px snap range
+                        newHeight = snappedHeight;
+                    }
+
+                    // Clamp height
+                    newHeight = Math.max(250, Math.min(800, newHeight));
+
+                    resizingTaskCard.style.height = newHeight + 'px';
+                };
+
+                const handleMouseUp = () => {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    isTaskCardResizing = false;
+                    resizingTaskCard = null;
+                    document.body.classList.remove('resizing');
+                };
+
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            });
+        });
+    }
+
     // Quick Notes Resize Functionality
     let isResizing = false;
     let initialWidth, initialHeight, initialMouseX, initialMouseY;
@@ -2037,6 +2088,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initializeCursorFollower, 100);
 
     initializeApp();
+
+    // Initialize task card resizing
+    initTaskCardResize();
 
     // NEW: Enhanced notes setup in init for better timing
     if (ENABLE_NEW_FEATURES) {

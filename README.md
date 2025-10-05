@@ -16,6 +16,7 @@ A sophisticated Chrome extension that combines task management with meditation f
 - **Daily Tasks**: Add, edit, delete, and mark tasks as complete with visual indicators
 - **Weekly Tasks**: Long-term task planning with starring for priority tasks
 - **Drag & Drop**: Reorder tasks easily with intuitive drag-and-drop functionality
+- **Resizable Task Cards**: Adjust task card heights with snap-to-grid functionality for precise layout control
 - **Aging Indicators**: Visual cues for task age to help prioritize
 - **Starring**: Mark important tasks with stars for quick identification
 
