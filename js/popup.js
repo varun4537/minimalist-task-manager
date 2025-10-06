@@ -1024,6 +1024,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const storageKey = `${taskType}Tasks`;
         const originalText = taskTextElement.textContent;
 
+        // Preserve the aging background color during editing
+        const computedStyle = window.getComputedStyle(listItem);
+        const originalBackground = computedStyle.backgroundColor;
+        listItem.style.backgroundColor = originalBackground;
+
         const textarea = document.createElement('textarea');
         textarea.className = 'task-edit-input';
         textarea.value = originalText;
@@ -1043,6 +1048,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const exitEditMode = () => {
             listItem.classList.remove('editing');
             listItem.setAttribute('draggable', true);
+            // Remove the inline background style to let CSS take over again
+            listItem.style.removeProperty('background-color');
             textarea.removeEventListener('blur', handleBlur);
             textarea.removeEventListener('keydown', handleKeyDown);
         };
