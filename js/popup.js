@@ -822,10 +822,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Tasks
             const todayTasks = result.todayTasks || [];
+            const weeklyTasks = result.weeklyTasks || [];
+
+            // DUMMY AGEING TEST - set createdAt for testing ageing colors
+            const now = new Date();
+            if (todayTasks.length >= 3) {
+                todayTasks[0].createdAt = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(); // 1 day ago
+                todayTasks[1].createdAt = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(); // 2 days ago
+                todayTasks[2].createdAt = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(); // 3 days ago
+            }
+            if (weeklyTasks.length >= 1) {
+                weeklyTasks[0].createdAt = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(); // 1 week ago
+            }
+
             renderTasks(todayTasks, todayTaskList, 'today');
             updateBadgeText(todayTasks);
-            
-            const weeklyTasks = result.weeklyTasks || [];
             renderTasks(weeklyTasks, weeklyTaskList, 'weekly');
             
             // AI Tools
@@ -1900,8 +1911,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         addToolButton.style.display = (tools || []).length >= MAX_AI_TOOLS ? 'none' : 'flex';
     }
-    function addAITool() { const label = toolLabelInput.value.trim(); const url = toolUrlInput.value.trim(); if (!label || !url) return; chrome.storage.sync.get(['aiTools'], (r) => { let tools = r.aiTools || []; if (tools.length >= MAX_AI_TOOLS) return; tools.push({label, url, color: '#4f46e5'}); chrome.storage.sync.set({aiTools: tools}, () => { renderAITools(tools); customToolModal.style.display = 'none'; toolLabelInput.value = ''; toolUrlInput.value = ''; showToast('AI tool added!'); }); }); }
-    function editAITool() { const label = editToolLabelInput.value.trim(); const url = editToolUrlInput.value.trim(); if (!label || !url || editingToolIndex < 0) return; chrome.storage.sync.get(['aiTools'], (r) => { let tools = r.aiTools || []; if (editingToolIndex >= tools.length) return; tools[editingToolIndex].label = label; tools[editingToolIndex].url = url; chrome.storage.sync.set({aiTools: tools}, () => { renderAITools(tools); editToolModal.style.display = 'none'; editingToolIndex = -1; showToast('AI tool updated!'); }); }); }
+    function addAITool() { const label = toolLabelInput.value.trim(); const url = toolUrlInput.value.trim(); if (!label || !url) return; if (!url.startsWith('https://') && !url.startsWith('http://')) { showToast('URL must start with https:// or http://'); return; } chrome.storage.sync.get(['aiTools'], (r) => { let tools = r.aiTools || []; if (tools.length >= MAX_AI_TOOLS) return; tools.push({label, url, color: '#4f46e5'}); chrome.storage.sync.set({aiTools: tools}, () => { renderAITools(tools); customToolModal.style.display = 'none'; toolLabelInput.value = ''; toolUrlInput.value = ''; showToast('AI tool added!'); }); }); }
+    function editAITool() { const label = editToolLabelInput.value.trim(); const url = editToolUrlInput.value.trim(); if (!label || !url || editingToolIndex < 0) return; if (!url.startsWith('https://') && !url.startsWith('http://')) { showToast('URL must start with https:// or http://'); return; } chrome.storage.sync.get(['aiTools'], (r) => { let tools = r.aiTools || []; if (editingToolIndex >= tools.length) return; tools[editingToolIndex].label = label; tools[editingToolIndex].url = url; chrome.storage.sync.set({aiTools: tools}, () => { renderAITools(tools); editToolModal.style.display = 'none'; editingToolIndex = -1; showToast('AI tool updated!'); }); }); }
     
     // --- Event Listeners Setup ---
     addTodayTaskBtn.addEventListener('click', () => { addTask(newTodayTaskInput.value, 'today', todayTaskList); newTodayTaskInput.value = ''; });
