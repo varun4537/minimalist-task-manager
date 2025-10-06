@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveEditToolButton = document.getElementById('save-edit-tool');
     const aiToolsPanel = document.querySelector('.ai-tools-panel');
     const aiToolsToggle = document.querySelector('.ai-tools-toggle');
+
+
     
     const storageSync = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync)
         ? chrome.storage.sync
@@ -302,6 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
             persistSettings({}, null);
         }
     }
+
+
 
     function createDefaultStats() {
         return {
@@ -1993,6 +1997,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (quickLinksToggle) {
         quickLinksToggle.addEventListener('change', (event) => applyQuickLinksPinned(event.target.checked, true));
     }
+
+
 
     meditationTriggerButton.addEventListener('click', enterMeditationModeUI);
     startStopMeditationButton.addEventListener('click', () => { if (isMeditationActive) endMeditation(); else startMeditationSession(); });
