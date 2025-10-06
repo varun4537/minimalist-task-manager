@@ -430,11 +430,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getPeriodStartTimestamp(periodKey) {
-        const config = STATS_PERIOD_CONFIG[periodKey] || STATS_PERIOD_CONFIG.all;
-        if (!config.days) {
-            return null;
+        const now = new Date();
+        switch (periodKey) {
+            case 'daily':
+                // Start of previous day (yesterday)
+                const yesterday = new Date(now);
+                yesterday.setDate(now.getDate() - 1);
+                yesterday.setHours(0, 0, 0, 0);
+                return yesterday.getTime();
+            case 'weekly':
+                // Start of current week (Monday)
+                const day = now.getDay(); // 0 = Sunday, 1 = Monday
+                const mondayOffset = day === 0 ? -6 : 1 - day;
+                const monday = new Date(now);
+                monday.setDate(now.getDate() + mondayOffset);
+                monday.setHours(0, 0, 0, 0);
+                return monday.getTime();
+            case 'monthly':
+                // 1st of current month
+                const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                return firstOfMonth.getTime();
+            case 'yearly':
+                // January 1st of current year
+                const firstOfYear = new Date(now.getFullYear(), 0, 1);
+                return firstOfYear.getTime();
+            case 'all':
+            default:
+                return null;
         }
-        return Date.now() - config.days * 24 * 60 * 60 * 1000;
     }
 
     function getStartOfDayTimestamp(timestamp) {
@@ -487,8 +510,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function buildStatsSnapshot(periodKey) {
         const startTimestamp = getPeriodStartTimestamp(periodKey);
-        const periodConfig = STATS_PERIOD_CONFIG[periodKey] || STATS_PERIOD_CONFIG.all;
-        const periodDurationMs = periodConfig.days ? periodConfig.days * 24 * 60 * 60 * 1000 : null;
+        const endTimestamp = Date.now();
+        const currentPeriodMs = startTimestamp ? endTimestamp - startTimestamp : null;
+        const periodDurationMs = currentPeriodMs;
 
         const meditationHistory = startTimestamp
             ? productivityStats.meditation.history.filter((entry) => entry.timestamp >= startTimestamp)
@@ -1849,7 +1873,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function getDaysSinceCreation(createdAt) { if (!createdAt) return 0; return Math.floor((new Date() - new Date(createdAt)) / 86400000); }
     function getWeeksSinceCreation(createdAt) { return Math.floor(getDaysSinceCreation(createdAt) / 7); }
-    
+
+
+
     function renderAITools(tools) {
         aiLinksContainer.querySelectorAll('.ai-button').forEach(b => b.remove());
         (tools || []).forEach((tool, index) => {

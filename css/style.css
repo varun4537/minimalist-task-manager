@@ -686,7 +686,7 @@ body.dark-mode .ai-links-vertical:hover::-webkit-scrollbar-thumb {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 0.25rem;
     border-radius: 16px;
     margin-bottom: 0.75rem;
     font-size: 0.9em;
@@ -1466,6 +1466,8 @@ body.dark-mode .stats-history-table header {
     text-align: center;
     color: var(--text-secondary);
 }
+
+
 
 @media (max-width: 960px) {
     .settings-panel {
