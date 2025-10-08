@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const quickLinksToggle = document.getElementById('keep-quick-links-visible');
     const viewStatsButton = document.getElementById('view-stats-btn');
     const resetStatsButton = document.getElementById('reset-stats-btn');
+    const resetTaskAgingButton = document.getElementById('reset-task-aging-btn');
     const statsOverlay = document.getElementById('stats-overlay');
     const statsPanel = statsOverlay ? statsOverlay.querySelector('.stats-panel') : null;
     const statsCloseButton = document.querySelector('.stats-close-btn');
@@ -827,17 +828,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Tasks
             const todayTasks = result.todayTasks || [];
             const weeklyTasks = result.weeklyTasks || [];
-
-            // DUMMY AGEING TEST - set createdAt for testing ageing colors
-            const now = new Date();
-            if (todayTasks.length >= 3) {
-                todayTasks[0].createdAt = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(); // 1 day ago
-                todayTasks[1].createdAt = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(); // 2 days ago
-                todayTasks[2].createdAt = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(); // 3 days ago
-            }
-            if (weeklyTasks.length >= 1) {
-                weeklyTasks[0].createdAt = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(); // 1 week ago
-            }
 
             renderTasks(todayTasks, todayTaskList, 'today');
             updateBadgeText(todayTasks);
@@ -1970,6 +1960,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderStatsOverlay(true);
             }
             showToast('All statistics have been reset.');
+        });
+    }
+
+    if (resetTaskAgingButton) {
+        resetTaskAgingButton.addEventListener('click', () => {
+            if (confirm('This will reset the createdAt date for all tasks to now, making them appear unaged. Continue?')) {
+                const now = new Date().toISOString();
+                chrome.storage.sync.get(['todayTasks', 'weeklyTasks'], (result) => {
+                    const todayTasks = (result.todayTasks || []).map(task => ({ ...task, createdAt: now }));
+                    const weeklyTasks = (result.weeklyTasks || []).map(task => ({ ...task, createdAt: now }));
+
+                    chrome.storage.sync.set({ todayTasks, weeklyTasks }, () => {
+                        loadData(); // Reload data to update the UI
+                        showToast('Task aging has been reset.');
+                    });
+                });
+            }
         });
     }
 

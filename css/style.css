@@ -751,9 +751,9 @@ body.dark-mode .ai-links-vertical:hover::-webkit-scrollbar-thumb {
 }
 .task-card li.starred-task .fa-star { color: #FBBF24; }
 .task-card li.completed { text-decoration: line-through; color: var(--text-secondary); opacity: 0.7; }
-.task-card li.aged-1 { background-color: var(--age-1-bg); color: var(--age-1-text); border-color: transparent; }
-.task-card li.aged-2 { background-color: var(--age-2-bg); color: var(--age-2-text); border-color: transparent; }
-.task-card li.aged-3 { background-color: var(--age-3-bg); color: var(--age-3-text); border-color: transparent; }
+.task-card li.aged-1 { background-color: var(--age-1-bg) !important; color: var(--age-1-text); border-color: transparent; }
+.task-card li.aged-2 { background-color: var(--age-2-bg) !important; color: var(--age-2-text); border-color: transparent; }
+.task-card li.aged-3 { background-color: var(--age-3-bg) !important; color: var(--age-3-text); border-color: transparent; }
 .task-card li.aged-1 .fa-star, .task-card li.aged-2 .fa-star, .task-card li.aged-3 .fa-star { color: inherit; opacity: 0.7;}
 .task-card li .task-text {
     flex: 1 1 auto;
@@ -768,11 +768,13 @@ body.dark-mode .ai-links-vertical:hover::-webkit-scrollbar-thumb {
 .task-card li.editing {
     border-color: var(--accent-color);
     box-shadow: 0 0 0 2px rgba(126, 58, 242, 0.15);
-    background-color: rgba(0, 0, 0, 0.02);
 }
 
+.task-card li.aged-1.editing { background-color: var(--age-1-bg) !important; }
+.task-card li.aged-2.editing { background-color: var(--age-2-bg) !important; }
+.task-card li.aged-3.editing { background-color: var(--age-3-bg) !important; }
+
 body.dark-mode .task-card li.editing {
-    background-color: rgba(255, 255, 255, 0.04);
 }
 
 .task-card li.editing input[type="checkbox"],
