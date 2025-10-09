@@ -2,6 +2,11 @@
 
 A sophisticated Chrome extension that combines task management with meditation features, enhanced with a smooth cursor follower effect.
 
+## 🚀 What's New in v1.3.1.1
+- **Code Cleanup**: Removed vestigial water mode feature and debug code
+- **Performance Improvements**: Cleaned up unused CSS and JavaScript code
+- **Enhanced Stability**: Removed ENABLE_NEW_FEATURES flag for cleaner codebase
+
 ## 🚀 What's New in v1.3.1
 - **Enhanced URL Validation**: AI tools now require full URLs (https:// or http://) for reliable links
 - **Improved Zen Cursor Mode**: Now shows actual cursor while the dot/circle follow as decorative elements
