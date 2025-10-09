@@ -46,37 +46,6 @@ body.font-size-large {
     font-size: 18px;
 }
 
-/* --- Water Mode Styles --- */
-body.water-mode-enabled .task-card {
-    background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: black; /* Ensure text is black for contrast */
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-body.water-mode-enabled .task-card h3.list-title,
-body.water-mode-enabled .task-card li,
-body.water-mode-enabled .task-card li .task-text,
-body.water-mode-enabled .task-card li .fa-star,
-body.water-mode-enabled .task-card li .remove-task,
-body.water-mode-enabled .task-card .edit-list-btn,
-body.water-mode-enabled .task-card li input[type="text"],
-body.water-mode-enabled .task-card li input[type="checkbox"],
-body.water-mode-enabled .task-card li input[type="text"]:focus {
-    color: black;
-}
-
-body.water-mode-enabled .task-card li.completed {
-    text-decoration: line-through;
-    color: rgba(0, 0, 0, 0.6); /* Transparent black for completed items */
-    opacity: 0.7;
-}
-
-body.water-mode-enabled .task-card li.starred-task {
-    border-color: rgba(255, 255, 255, 0.5);
-}
 
 
 
@@ -1203,26 +1172,6 @@ body.dark-mode .setting-item {
     font-weight: 500;
 }
 
-#water-mode-toggle:checked ~ .water-mode-settings {
-    display: block;
-}
-
-.setting-item label[for="ripple-intensity"], .setting-item label[for="ripple-size"] {
-    margin-bottom: 0.5rem;
-}
-
-#water-mode-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    pointer-events: none;
-}
 
 .stats-grid {
     display: grid;

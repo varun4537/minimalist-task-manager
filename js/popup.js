@@ -134,8 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let meditationSessionElapsedSeconds = 0;
     let meditationPreparationTimeout = null;
 
-    // NEW FEATURES
-    let ENABLE_NEW_FEATURES = true;
 
     // --- Cursor Follower State ---
     let cursorDot = null;
@@ -2118,7 +2116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Ctrl/Cmd + S: Toggle quick notes
-        if ((event.ctrlKey || event.metaKey) && event.key === 's' && ENABLE_NEW_FEATURES) {
+        if ((event.ctrlKey || event.metaKey) && event.key === 's') {
             event.preventDefault();
             toggleQuickNotes();
         }
@@ -2149,37 +2147,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize task card resizing
     initTaskCardResize();
 
-    // NEW: Enhanced notes setup in init for better timing
-    if (ENABLE_NEW_FEATURES) {
-        setTimeout(() => {
-            const quickNotesIcon = document.querySelector('.quick-notes-icon');
-            const quickNotesPanel = document.querySelector('.quick-notes-panel');
-            const quickNotesTextarea = quickNotesPanel ? quickNotesPanel.querySelector('textarea') : null;
+    // Enhanced notes setup in init for better timing
+    setTimeout(() => {
+        const quickNotesIcon = document.querySelector('.quick-notes-icon');
+        const quickNotesPanel = document.querySelector('.quick-notes-panel');
+        const quickNotesTextarea = quickNotesPanel ? quickNotesPanel.querySelector('textarea') : null;
 
-            console.log('Setting up notes listeners:', { icon: !!quickNotesIcon, panel: !!quickNotesPanel, textarea: !!quickNotesTextarea });
-
-            if (quickNotesIcon) {
-                quickNotesIcon.addEventListener('click', () => {
-                    console.log('Notes icon clicked');
-                    toggleQuickNotes();
-                });
-            }
-            if (quickNotesTextarea) {
-                quickNotesTextarea.addEventListener('input', saveQuickNotes);
-                quickNotesTextarea.addEventListener('blur', saveQuickNotes);
-            }
-
-            // Initialize resize functionality
-            initQuickNotesResize();
-
-            // Font size controls
-            const fontSizeBtns = document.querySelectorAll('.font-size-btn');
-            fontSizeBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const action = e.target.dataset.action;
-                    adjustNotesFontSize(action);
-                });
+        if (quickNotesIcon) {
+            quickNotesIcon.addEventListener('click', () => {
+                toggleQuickNotes();
             });
-        }, 500);
-    }
+        }
+        if (quickNotesTextarea) {
+            quickNotesTextarea.addEventListener('input', saveQuickNotes);
+            quickNotesTextarea.addEventListener('blur', saveQuickNotes);
+        }
+
+        // Initialize resize functionality
+        initQuickNotesResize();
+
+        // Font size controls
+        const fontSizeBtns = document.querySelectorAll('.font-size-btn');
+        fontSizeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                adjustNotesFontSize(action);
+            });
+        });
+    }, 500);
 });
